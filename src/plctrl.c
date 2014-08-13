@@ -1980,6 +1980,30 @@ plsexit( int ( *handler )( const char * ) )
 }
 
 //--------------------------------------------------------------------------
+// PLINT plgetlasterr()
+//
+//! Get the error from the last function call.
+//--------------------------------------------------------------------------
+
+PLINT
+plgetlasterr( )
+{
+	return plsc->internalerrorcode;
+}
+
+//--------------------------------------------------------------------------
+// PLINT plsetlasterr( PLINT errorcode )
+//
+//! Set the error from the last function call.
+//--------------------------------------------------------------------------
+
+void
+plsetlasterr( PLINT errorcode )
+{
+	plsc->internalerrorcode = errorcode;
+}
+
+//--------------------------------------------------------------------------
 // void plgra()
 //
 //! Switches to graphics screen.

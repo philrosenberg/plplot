@@ -556,6 +556,16 @@ plexit( const char *errormsg );
 void
 pl_exit( void );
 
+// Get the last error reported by a function
+
+PLINT
+plgetlasterr( );
+
+// Set the error reported by a function
+
+void
+plsetlasterr( );
+
 // A handy way to issue warnings, if need be.
 
 PLDLLIMPEXP void

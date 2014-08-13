@@ -524,6 +524,10 @@ typedef struct
 // A typedef to facilitate declaration of a pointer to a plfops_t structure.
 //
 
+// Error Codes
+#define PL_ERR_OK          0
+#define PL_ERR_OUT_OF_MEM  1
+
 typedef plf2ops_t * PLF2OPS;
 
 //--------------------------------------------------------------------------

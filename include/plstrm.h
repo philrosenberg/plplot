@@ -801,6 +801,9 @@ typedef struct
     // (inverted tick marks and numerical tick labels if either is
     // present).
     PLFLT boxbb_xmin, boxbb_xmax, boxbb_ymin, boxbb_ymax;
+
+	//Internal Error Info
+	PLINT internalerrorcode;
 } PLStream;
 
 //--------------------------------------------------------------------------
