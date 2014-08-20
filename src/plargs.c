@@ -2476,7 +2476,9 @@ opt_plwindow( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUS
 static int
 opt_auto_path( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED( client_data ) )
 {
-    plsc->auto_path = plstrdup( opt_arg );
+	plsc->auto_path.copyfrommem( &plsc->auto_path, opt_arg, strlen( opt_arg ) +1 );
+	if( plsc->auto_path.n != strlen( opt_arg ) +1 )
+		plexit( "opt_auto_path: Insufficient memory" );
     return 0;
 }
 

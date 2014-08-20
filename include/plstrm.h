@@ -639,7 +639,7 @@ typedef struct
 
     plchararray server_name, server_host, server_port, user;
 	plchararray plserver, plwindow;
-    char *auto_path;
+    plchararray auto_path;
     char *tk_file;  // plserver -file option
     int  bufmax, dp, server_nokill;
 

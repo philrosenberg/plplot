@@ -2169,6 +2169,7 @@ plconstructarrays( PLStream * pls )
 		constructplchararray( &pls->server_port, 0 );
 		constructplchararray( &pls->user, 0 );
 		constructplchararray( &pls->timefmt, 0 );
+		constructplchararray( &pls->auto_path, 0 );
 	}
 
 	pls->constructedarrays=1;
@@ -2199,6 +2200,7 @@ pldestroyarrays( PLStream * pls )
 		pls->server_port.destroy( &pls->server_port );
 		pls->user.destroy( &pls->user );
 		pls->timefmt.destroy( &plsc->timefmt );
+		pls->auto_path.destroy( &plsc->auto_path );
 	}
 	
 	pls->constructedarrays=0;
@@ -2503,14 +2505,12 @@ c_plend1( void )
         plsc->level = 0;
     }
 
-// Free all malloc'ed stream memory
+// Free all stream arrays
 	pldestroyarrays( plsc );
     free_mem( plsc->dev );
 #ifndef BUFFERED_FILE
     free_mem( plsc->plbuf_buffer );
 #endif
-    if ( plsc->auto_path )
-        free_mem( plsc->auto_path );
 
 
     // Close qsastime library for this stream that was opened by
