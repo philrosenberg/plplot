@@ -529,7 +529,7 @@ typedef struct
 {
 // Misc control information
 
-    PLINT ipls, level, verbose, debug, initialized, dev_initialized;
+    PLINT ipls, level, verbose, debug, initialized, dev_initialized, constructedarrays;
     //CONSTANT SOVERSION FIX
     //    PLBOOL     stream_closed;
 	plchararray  program;

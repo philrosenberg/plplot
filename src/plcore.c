@@ -2145,6 +2145,50 @@ c_plflush( void )
 }
 
 //--------------------------------------------------------------------------
+// void plconstructarrays( PLStream *pls )
+//
+// constructs all the arrays in a PLStream
+//--------------------------------------------------------------------------
+void
+plconstructarrays( PLStream * pls )
+{
+	if ( pls->constructedarrays == 0 )
+	{
+		constructplchararray( &pls->program, 0 );
+		constructplcolorarray( &pls->cmap0, 0 );
+		constructplcolorarray( &pls->cmap1, 0 );
+		constructplfltarray( &pls->arrow_x, 0 );
+		constructplfltarray( &pls->arrow_y, 0 );
+		constructplchararray( &pls->plserver, 0 );
+		constructplchararray( &pls->plwindow, 0 );
+	}
+
+	pls->constructedarrays=1;
+}
+
+//--------------------------------------------------------------------------
+// void pldestroyarrays( PLStream *pls )
+//
+// constructs all the arrays in a PLStream
+//--------------------------------------------------------------------------
+void
+pldestroyarrays( PLStream * pls )
+{
+	if( pls->constructedarrays != 0 )
+	{
+		pls->program.destroy( &pls->program );
+		pls->cmap0.destroy( &pls->cmap0 );
+		pls->cmap1.destroy( &pls->cmap1 );
+		pls->arrow_x.destroy( &pls->arrow_x );
+		pls->arrow_y.destroy( &pls->arrow_y );
+		pls->plserver.destroy( &pls->plserver );
+		pls->plwindow.destroy( &pls->plwindow );
+	}
+	
+	pls->constructedarrays=0;
+}
+
+//--------------------------------------------------------------------------
 // Startup routines.
 //--------------------------------------------------------------------------
 
@@ -2162,6 +2206,8 @@ pllib_init()
     if ( lib_initialized )
         return;
     lib_initialized = 1;
+
+	plconstructarrays( plsc );
 
 #ifdef ENABLE_DYNDRIVERS
 // Create libltdl resources
@@ -2445,17 +2491,13 @@ c_plend1( void )
         free_mem( plsc->FileName );
 
 // Free all malloc'ed stream memory
-
-    plsc->cmap0.destroy( &plsc->cmap0 );
-    plsc->cmap1.destroy( &plsc->cmap1 );
-	plsc->plwindow.destroy( &plsc->plwindow );
+	pldestroyarrays( plsc );
     free_mem( plsc->geometry );
     free_mem( plsc->dev );
     free_mem( plsc->BaseName );
 #ifndef BUFFERED_FILE
     free_mem( plsc->plbuf_buffer );
 #endif
-	plsc->program.destroy( &plsc->plwindow );
     if ( plsc->server_name )
         free_mem( plsc->server_name );
     if ( plsc->server_host )
@@ -2464,12 +2506,9 @@ c_plend1( void )
         free_mem( plsc->server_port );
     if ( plsc->user )
         free_mem( plsc->user );
-	plsc->plserver.destroy( &plsc->plserver );
     if ( plsc->auto_path )
         free_mem( plsc->auto_path );
 
-	plsc->arrow_x.destroy( &plsc->arrow_x );
-	plsc->arrow_y.destroy( &plsc->arrow_y );
 
     if ( plsc->timefmt )
         free_mem( plsc->timefmt );
@@ -2519,11 +2558,7 @@ c_plsstrm( PLINT strm )
                 plexit( "plsstrm: Out of memory." );
 
             memset( (char *) pls[ipls], 0, sizeof ( PLStream ) );
-			constructplchararray( &pls[ipls]->program, 0 );
-			constructplchararray( &pls[ipls]->plwindow, 0 );
-			constructplchararray( &pls[ipls]->plserver, 0 );
-			constructplfltarray( &pls[ipls]->arrow_x, 0 );
-			constructplfltarray( &pls[ipls]->arrow_y, 0 );
+			plconstructarrays( pls[ipls] );
         }
         plsc       = pls[ipls];
         plsc->ipls = ipls;

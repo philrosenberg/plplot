@@ -17,10 +17,11 @@ void resizepl##name##array( pl##name##array *thisone, size_t n )\
 {\
 	if( n > thisone->allocated )\
 	{\
+		type *mem;\
 		size_t newsize = thisone->allocated*2;\
 		if ( newsize < n )\
 			newsize = n;\
-		type *mem=(type*)malloc( newsize * sizeof( type ) );\
+		mem=(type*)malloc( newsize * sizeof( type ) );\
 		if( !mem )\
 			return;\
 		if( thisone->mem )\
@@ -45,7 +46,7 @@ void shrinktofitpl##name##array( pl##name##array *thisone )\
 {\
 	if( thisone->mem && thisone->n != thisone->allocated )\
 	{\
-		type *mem=(type*)malloc( thisone->n * sizeof( type ) );\
+		type *mem=(type *)malloc( thisone->n * sizeof( type ) );\
 		if( !mem )\
 			return;\
 			\
@@ -93,18 +94,3 @@ PLARRAYDEFINE( PLINT, int )
 PLARRAYDEFINE( PLFLT, flt )
 PLARRAYDEFINE( char, char )
 PLARRAYDEFINE( PLColor, color )
-
-void constructplfltarray( plfltarray *thisone, size_t n )
-{
-	thisone->n = 0;
-	thisone->allocated = 0;
-	thisone->mem = NULL;
-	thisone->pushback = &pushbackplfltarray;
-	thisone->resize = &resizeplfltarray;
-	thisone->destroy = &destroyplfltarray;
-	thisone->shrinktofit = &shrinktofitplfltarray;
-	thisone->copyfromarray = &copyfromplfltarray;
-	thisone->copyfrommem = &copyfrommem;
-	
-	thisone->resize( thisone, n );
-}

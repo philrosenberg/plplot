@@ -24,6 +24,7 @@ set(plplot${LIB_TAG}_LIB_SRCS
   plaffine.c
   plarc.c
   plargs.c
+  plarray.c
   plbox.c
   plcont.c
   plcore.c
