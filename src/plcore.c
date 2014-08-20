@@ -2507,7 +2507,6 @@ c_plend1( void )
 
 // Free all stream arrays
 	pldestroyarrays( plsc );
-    free_mem( plsc->dev );
 #ifndef BUFFERED_FILE
     free_mem( plsc->plbuf_buffer );
 #endif

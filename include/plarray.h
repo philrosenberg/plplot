@@ -50,6 +50,7 @@ void constructpl##name##array( pl##name##array *thisone, size_t n );
 PLARRAYDECLARE( PLINT, int )
 PLARRAYDECLARE( PLFLT, flt )
 PLARRAYDECLARE( char, char )
+PLARRAYDECLARE( unsigned char, uchar )
 PLARRAYDECLARE( PLColor, color )
 
 #endif

@@ -93,4 +93,5 @@ void constructpl##name##array( pl##name##array *thisone, size_t n )\
 PLARRAYDEFINE( PLINT, int )
 PLARRAYDEFINE( PLFLT, flt )
 PLARRAYDEFINE( char, char )
+PLARRAYDEFINE( unsigned char, uchar )
 PLARRAYDEFINE( PLColor, color )
