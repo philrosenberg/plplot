@@ -2407,7 +2407,9 @@ opt_bufmax( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED
 static int
 opt_server_name( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED( client_data ) )
 {
-    plsc->server_name = plstrdup( opt_arg );
+	plsc->server_name.copyfrommem( &plsc->server_name, opt_arg, strlen( opt_arg ) + 1 );
+	if( plsc->server_name.n != strlen( opt_arg ) + 1 )
+		plexit( "opt_server_name: Insufficient memory" ); 
     return 0;
 }
 
@@ -2546,13 +2548,13 @@ opt_geo( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED( c
     PLINT xwid, ywid, xoff, yoff;
 
 // The TK driver uses the geometry string directly
-
-    if ( ( plsc->geometry = (char *) malloc( (size_t) ( 1 + strlen( opt_arg ) ) * sizeof ( char ) ) ) == NULL )
+	plsc->geometry.resize( &plsc->geometry, 1 + strlen( opt_arg ) );
+    if ( plsc->geometry.n != 1 + strlen( opt_arg ) )
     {
         plexit( "opt_geo: Insufficient memory" );
     }
 
-    strcpy( plsc->geometry, opt_arg );
+    strcpy( plsc->geometry.mem, opt_arg );
 
     numargs = sscanf( opt_arg, "%dx%d%d%d", &xwid, &ywid, &xoff, &yoff );
     if ( numargs == 2 )

@@ -2163,6 +2163,11 @@ plconstructarrays( PLStream * pls )
 		constructplchararray( &pls->plwindow, 0 );
 		constructplchararray( &pls->BaseName, 0 );
 		constructplchararray( &pls->FileName, 0 );
+		constructplchararray( &pls->geometry, 0 );
+		constructplchararray( &pls->server_host, 0 );
+		constructplchararray( &pls->server_name, 0 );
+		constructplchararray( &pls->server_port, 0 );
+		constructplchararray( &pls->user, 0 );
 	}
 
 	pls->constructedarrays=1;
@@ -2187,6 +2192,11 @@ pldestroyarrays( PLStream * pls )
 		pls->plwindow.destroy( &pls->plwindow );
 		pls->BaseName.destroy( &pls->BaseName );
 		pls->FileName.destroy( &pls->FileName );
+		pls->geometry.destroy( &pls->geometry );
+		pls->server_name.destroy( &pls->server_name );
+		pls->server_host.destroy( &pls->server_host );
+		pls->server_port.destroy( &pls->server_port );
+		pls->user.destroy( &pls->user );
 	}
 	
 	pls->constructedarrays=0;
@@ -2493,19 +2503,10 @@ c_plend1( void )
 
 // Free all malloc'ed stream memory
 	pldestroyarrays( plsc );
-    free_mem( plsc->geometry );
     free_mem( plsc->dev );
 #ifndef BUFFERED_FILE
     free_mem( plsc->plbuf_buffer );
 #endif
-    if ( plsc->server_name )
-        free_mem( plsc->server_name );
-    if ( plsc->server_host )
-        free_mem( plsc->server_host );
-    if ( plsc->server_port )
-        free_mem( plsc->server_port );
-    if ( plsc->user )
-        free_mem( plsc->user );
     if ( plsc->auto_path )
         free_mem( plsc->auto_path );
 
