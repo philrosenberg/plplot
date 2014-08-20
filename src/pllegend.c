@@ -1966,7 +1966,7 @@ c_plcolorbar( PLFLT *p_colorbar_width, PLFLT *p_colorbar_height,
             // Use the same number of steps as there are steps in
             // color palette 1.
             // TODO: Determine a better way to specify the steps here?
-            n_steps   = plsc->ncol1;
+            n_steps   = plsc->cmap1.n;
             step_size = ( max_value - min_value ) / (PLFLT) n_steps;
             if ( opt & PL_COLORBAR_ORIENT_RIGHT )
             {

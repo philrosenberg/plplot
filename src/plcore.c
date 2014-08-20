@@ -2243,25 +2243,16 @@ c_plinit( void )
     plstrm_init();
 
 // Set title for window to a sensible default if not defined
-    if ( plsc->plwindow == NULL )
-    {
-        if ( plsc->program )
-        {
-            if ( ( plsc->plwindow = (char *) malloc( (size_t) ( 1 + strlen( plsc->program ) ) * sizeof ( char ) ) ) == NULL )
-            {
-                plexit( "plinit: Insufficient memory" );
-            }
-            strcpy( plsc->plwindow, plsc->program );
-        }
-        else
-        {
-            if ( ( plsc->plwindow = (char *) malloc( (size_t) 7 * sizeof ( char ) ) ) == NULL )
-            {
-                plexit( "plinit: Insufficient memory" );
-            }
-            strcpy( plsc->plwindow, "PLplot" );
-        }
-    }
+	if ( plsc->plwindow.n == 0 )
+	{
+		if ( plsc->program.n > 0 )
+			plsc->plwindow.copyfromarray( &plsc->plwindow, plsc->program );
+		else
+			plsc->plwindow.copyfrommem( &plsc->plwindow, "PLplot", 7 );
+	}
+// Check allocation was okay
+	if ( plsc->plwindow.n == 0 )
+		plabort( "plinit: Insufficient memory" );
 
 // Initialize device & first page
 
@@ -2455,17 +2446,16 @@ c_plend1( void )
 
 // Free all malloc'ed stream memory
 
-    free_mem( plsc->cmap0 );
-    free_mem( plsc->cmap1 );
-    free_mem( plsc->plwindow );
+    plsc->cmap0.destroy( &plsc->cmap0 );
+    plsc->cmap1.destroy( &plsc->cmap1 );
+	plsc->plwindow.destroy( &plsc->plwindow );
     free_mem( plsc->geometry );
     free_mem( plsc->dev );
     free_mem( plsc->BaseName );
 #ifndef BUFFERED_FILE
     free_mem( plsc->plbuf_buffer );
 #endif
-    if ( plsc->program )
-        free_mem( plsc->program );
+	plsc->program.destroy( &plsc->plwindow );
     if ( plsc->server_name )
         free_mem( plsc->server_name );
     if ( plsc->server_host )
@@ -2474,15 +2464,12 @@ c_plend1( void )
         free_mem( plsc->server_port );
     if ( plsc->user )
         free_mem( plsc->user );
-    if ( plsc->plserver )
-        free_mem( plsc->plserver );
+	plsc->plserver.destroy( &plsc->plserver );
     if ( plsc->auto_path )
         free_mem( plsc->auto_path );
 
-    if ( plsc->arrow_x )
-        free_mem( plsc->arrow_x );
-    if ( plsc->arrow_y )
-        free_mem( plsc->arrow_y );
+	plsc->arrow_x.destroy( &plsc->arrow_x );
+	plsc->arrow_y.destroy( &plsc->arrow_y );
 
     if ( plsc->timefmt )
         free_mem( plsc->timefmt );
@@ -2532,6 +2519,11 @@ c_plsstrm( PLINT strm )
                 plexit( "plsstrm: Out of memory." );
 
             memset( (char *) pls[ipls], 0, sizeof ( PLStream ) );
+			constructplchararray( &pls[ipls]->program, 0 );
+			constructplchararray( &pls[ipls]->plwindow, 0 );
+			constructplchararray( &pls[ipls]->plserver, 0 );
+			constructplfltarray( &pls[ipls]->arrow_x, 0 );
+			constructplfltarray( &pls[ipls]->arrow_y, 0 );
         }
         plsc       = pls[ipls];
         plsc->ipls = ipls;
@@ -2610,10 +2602,10 @@ plstrm_init( void )
     {
         plsc->initialized = 1;
 
-        if ( plsc->cmap0 == NULL )
+        if ( plsc->cmap0.n == 0 )
             plspal0( "" );
 
-        if ( plsc->cmap1 == NULL )
+        if ( plsc->cmap1.n == 0 )
             plspal1( "", TRUE );
 
         // Set continuous plots to use the full color map 1 range
@@ -2656,7 +2648,6 @@ pl_cpcolor( PLColor *to, PLColor *from )
 void
 c_plcpstrm( PLINT iplsr, PLINT flags )
 {
-    int      i;
     PLStream *plsr;
 
     plsr = pls[iplsr];
@@ -2715,34 +2706,24 @@ c_plcpstrm( PLINT iplsr, PLINT flags )
 // cmap 0
 
     plsc->icol0 = plsr->icol0;
-    plsc->ncol0 = plsr->ncol0;
-    if ( plsc->cmap0 != NULL )
-        free( (void *) plsc->cmap0 );
+	plsc->cmap0.copyfromarray( &plsc->cmap0, plsr->cmap0 );
 
-    if ( ( plsc->cmap0 = (PLColor *) calloc( 1, (size_t) plsc->ncol0 * sizeof ( PLColor ) ) ) == NULL )
+	if ( plsc->cmap0.n != plsr->cmap0.n )
     {
         plexit( "c_plcpstrm: Insufficient memory" );
     }
-
-    for ( i = 0; i < plsc->ncol0; i++ )
-        pl_cpcolor( &plsc->cmap0[i], &plsr->cmap0[i] );
 
 // cmap 1
 
     plsc->icol1     = plsr->icol1;
-    plsc->ncol1     = plsr->ncol1;
     plsc->cmap1_min = plsr->cmap1_min;
     plsc->cmap1_max = plsr->cmap1_max;
-    if ( plsc->cmap1 != NULL )
-        free( (void *) plsc->cmap1 );
-
-    if ( ( plsc->cmap1 = (PLColor *) calloc( 1, (size_t) plsc->ncol1 * sizeof ( PLColor ) ) ) == NULL )
+	plsc->cmap1.copyfromarray( &plsc->cmap1, plsr->cmap1 );
+	
+	if ( plsc->cmap1.n != plsr->cmap1.n )
     {
         plexit( "c_plcpstrm: Insufficient memory" );
     }
-
-    for ( i = 0; i < plsc->ncol1; i++ )
-        pl_cpcolor( &plsc->cmap1[i], &plsr->cmap1[i] );
 
 // Initialize if it hasn't been done yet.
 

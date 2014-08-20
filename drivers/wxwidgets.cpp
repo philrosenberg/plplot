@@ -909,8 +909,12 @@ void plD_esc_wxwidgets( PLStream *pls, PLINT op, void *ptr )
             wxRunApp( pls, true );
             dev->comcount = 0;
         }
-        dev->ClearBackground( pls->cmap0[0].r, pls->cmap0[0].g, pls->cmap0[0].b,
-            pls->sppxmi, pls->sppymi, pls->sppxma, pls->sppyma );
+		if( pls->cmap0.n > 0 )
+			dev->ClearBackground( pls->cmap0.mem[0].r, pls->cmap0.mem[0].g, pls->cmap0.mem[0].b,
+				pls->sppxmi, pls->sppymi, pls->sppxma, pls->sppyma );
+		else
+			dev->ClearBackground( 255, 255, 255,
+				pls->sppxmi, pls->sppymi, pls->sppxma, pls->sppyma );
         break;
 
     case PLESC_FLUSH:        // forced update of the window
@@ -1195,14 +1199,14 @@ static void init_freetype_lv2( PLStream *pls )
 
     if ( ( FT->want_smooth_text == 1 ) && ( FT->BLENDED_ANTIALIASING == 0 ) ) // do we want to at least *try* for smoothing ?
     {
-        FT->ncol0_org   = pls->ncol0;                                         // save a copy of the original size of ncol0
-        FT->ncol0_xtra  = 16777216 - ( pls->ncol1 + pls->ncol0 );             // work out how many free slots we have
-        FT->ncol0_width = FT->ncol0_xtra / ( pls->ncol0 - 1 );                // find out how many different shades of anti-aliasing we can do
+        FT->ncol0_org   = pls->cmap0.n;                                         // save a copy of the original size of ncol0
+        FT->ncol0_xtra  = 16777216 - ( pls->cmap1.n + pls->cmap0.n );             // work out how many free slots we have
+        FT->ncol0_width = FT->ncol0_xtra / ( pls->cmap0.n - 1 );                // find out how many different shades of anti-aliasing we can do
         if ( FT->ncol0_width > 4 )                                            // are there enough colour slots free for text smoothing ?
         {
             if ( FT->ncol0_width > max_number_of_grey_levels_used_in_text_smoothing )
                 FT->ncol0_width = max_number_of_grey_levels_used_in_text_smoothing;           // set a maximum number of shades
-            plscmap0n( FT->ncol0_org + ( FT->ncol0_width * pls->ncol0 ) );                    // redefine the size of cmap0
+            plscmap0n( FT->ncol0_org + ( FT->ncol0_width * pls->cmap0.n ) );                    // redefine the size of cmap0
             // the level manipulations are to turn off the plP_state(PLSTATE_CMAP0)
             // call in plscmap0 which (a) leads to segfaults since the GD image is
             // not defined at this point and (b) would be inefficient in any case since
@@ -1303,7 +1307,7 @@ static void install_buffer( PLStream *pls )
     }
 
 
-    wxString title( pls->plwindow, *wxConvCurrent );
+    wxString title( pls->plwindow.mem, *wxConvCurrent );
     switch ( dev->backend )
     {
     case wxBACKEND_DC:

@@ -878,8 +878,12 @@ c_plparseopts( int *p_argc, const char **argv, PLINT mode )
 
     if ( !mode_noprogram )
     {
-        plsc->program = plstrdup( argv[0] );
-        program       = (const char *) plsc->program;
+		plsc->program.copyfrommem( &plsc->program, argv[0], strlen(argv[0]) + 1 );
+		if( plsc->program.n == 0 )
+		{
+			plexit( "c_plparseopts: Insufficient memory" );
+		}
+        program       = (const char *) plsc->program.mem;
         --myargc; ++argv;
     }
     if ( myargc == 0 )
@@ -1984,7 +1988,8 @@ opt_bg( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED( cl
 static int
 opt_ncol0( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED( client_data ) )
 {
-    plsc->ncol0 = atoi( opt_arg );
+	plscmap0n( atoi( opt_arg ) );
+    //plsc->ncol0 = atoi( opt_arg ); to do: check this is okay 
     return 0;
 }
 
@@ -2005,7 +2010,8 @@ opt_ncol0( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED(
 static int
 opt_ncol1( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED( client_data ) )
 {
-    plsc->ncol1 = atoi( opt_arg );
+	plscmap1n( atoi( opt_arg ) );
+    //plsc->ncol1 = atoi( opt_arg ); to do: check this is okay
     return 0;
 }
 
@@ -2422,7 +2428,9 @@ opt_server_name( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_U
 static int
 opt_plserver( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED( client_data ) )
 {
-    plsc->plserver = plstrdup( opt_arg );
+	plsc->plserver.copyfrommem( &plsc->plserver, opt_arg, strlen( opt_arg ) +1 );
+	if( plsc->plserver.n == 0 )
+        plexit( "opt_plserver: Insufficient memory" );
     return 0;
 }
 
@@ -2443,11 +2451,9 @@ opt_plserver( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUS
 static int
 opt_plwindow( const char * PL_UNUSED( opt ), const char *opt_arg, void * PL_UNUSED( client_data ) )
 {
-    if ( ( plsc->plwindow = (char *) malloc( (size_t) ( 1 + strlen( opt_arg ) ) * sizeof ( char ) ) ) == NULL )
-    {
+	plsc->plwindow.copyfrommem( &plsc->plwindow, opt_arg, strlen( opt_arg ) +1 );
+    if ( plsc->plwindow.n == 0 )
         plexit( "opt_plwindow: Insufficient memory" );
-    }
-    strcpy( plsc->plwindow, opt_arg );
     return 0;
 }
 

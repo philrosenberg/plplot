@@ -38,13 +38,9 @@ void
 c_plsvect( const PLFLT *arrowx, const PLFLT *arrowy, PLINT npts, PLINT fill )
 {
     int   i;
+	size_t initialnpts=plsc->arrow_x.n;
     PLFLT def_arrow_x[6] = { -0.5, 0.5, 0.3, 0.5, 0.3, 0.5 };
     PLFLT def_arrow_y[6] = { 0.0, 0.0, 0.2, 0.0, -0.2, 0.0 };
-
-    if ( plsc->arrow_x )
-        free_mem( plsc->arrow_x );
-    if ( plsc->arrow_y )
-        free_mem( plsc->arrow_y );
 
     // Reset default arrow if null pointers are passed.
     if ( arrowx == NULL && arrowy == NULL )
@@ -55,19 +51,21 @@ c_plsvect( const PLFLT *arrowx, const PLFLT *arrowy, PLINT npts, PLINT fill )
         fill   = 0;
     }
 
-    if ( ( ( plsc->arrow_x = (PLFLT *) malloc( (size_t) npts * sizeof ( PLFLT ) ) ) == NULL ) ||
-         ( ( plsc->arrow_y = (PLFLT *) malloc( (size_t) npts * sizeof ( PLFLT ) ) ) == NULL ) )
+	plsc->arrow_x.resize( &plsc->arrow_x, npts );
+	plsc->arrow_y.resize( &plsc->arrow_x, npts );
+	if( plsc->arrow_x.n != npts || plsc->arrow_y.n != npts )
     {
-        plexit( "c_plsvect: Insufficient memory" );
+		plabort( "c_plsvect: Insufficient memory" );
     }
-
-    plsc->arrow_npts = npts;
-    plsc->arrow_fill = fill;
-    for ( i = 0; i < npts; i++ )
-    {
-        plsc->arrow_x[i] = arrowx[i];
-        plsc->arrow_y[i] = arrowy[i];
-    }
+	else
+	{
+		plsc->arrow_fill = fill;
+		for ( i = 0; i < npts; i++ )
+		{
+			plsc->arrow_x.mem[i] = arrowx[i];
+			plsc->arrow_y.mem[i] = arrowy[i];
+		}
+	}
 }
 
 //
@@ -81,8 +79,8 @@ plP_plotvect( PLFLT x, PLFLT y, PLFLT u, PLFLT v, PLFLT scale )
     // Unnecessarily initialize a_y to quiet a -O1 -Wuninitialized warning
     // which is a false alarm.  (If something goes wrong with the
     // a_x malloc below any further use of a_y does not occur.)
-    PLINT *a_x, *a_y = NULL;
-    int   j;
+	plintarray a_x, a_y;
+    size_t   j;
 
     uu = scale * u;
     vv = scale * v;
@@ -90,10 +88,11 @@ plP_plotvect( PLFLT x, PLFLT y, PLFLT u, PLFLT v, PLFLT scale )
     if ( uu == 0.0 && vv == 0.0 )
         return;
 
-    if ( ( ( a_x = (PLINT *) malloc( sizeof ( PLINT ) * (size_t) ( plsc->arrow_npts ) ) ) == NULL ) ||
-         ( ( a_y = (PLINT *) malloc( sizeof ( PLINT ) * (size_t) ( plsc->arrow_npts ) ) ) == NULL ) )
+	constructplintarray( &a_x, plsc->arrow_x.n );
+	constructplintarray( &a_y, plsc->arrow_y.n );
+	if ( a_x.n != plsc->arrow_x.n || a_y.n != plsc->arrow_y.n )
     {
-        plexit( "plP_plotvect: Insufficient memory" );
+        plabort( "plP_plotvect: Insufficient memory" );
     }
 
     TRANSFORM( x, y, &xt, &yt );
@@ -109,22 +108,22 @@ plP_plotvect( PLFLT x, PLFLT y, PLFLT u, PLFLT v, PLFLT scale )
 
     // transform arrow -> a
 
-    for ( j = 0; j < plsc->arrow_npts; j++ )
+    for ( j = 0; j < plsc->arrow_x.n; j++ )
     {
-        a_x[j] = (PLINT) ( plsc->arrow_x[j] * dpx - plsc->arrow_y[j] * dpy + px0 );
-        a_y[j] = (PLINT) ( plsc->arrow_x[j] * dpy + plsc->arrow_y[j] * dpx + py0 );
+        a_x.mem[j] = (PLINT) ( plsc->arrow_x.mem[j] * dpx - plsc->arrow_y.mem[j] * dpy + px0 );
+        a_y.mem[j] = (PLINT) ( plsc->arrow_x.mem[j] * dpy + plsc->arrow_y.mem[j] * dpx + py0 );
     }
 
     // draw the arrow
-    plP_draphy_poly( a_x, a_y, plsc->arrow_npts );
+    plP_draphy_poly( a_x.mem, a_y.mem, plsc->arrow_x.n );
     if ( plsc->arrow_fill )
     {
-        plP_plfclp( a_x, a_y, plsc->arrow_npts, plsc->clpxmi, plsc->clpxma,
+        plP_plfclp( a_x.mem, a_y.mem, plsc->arrow_x.n, plsc->clpxmi, plsc->clpxma,
             plsc->clpymi, plsc->clpyma, plP_fill );
     }
 
-    free( (void *) a_x );
-    free( (void *) a_y );
+	a_x.destroy( &a_x );
+	a_y.destroy( &a_y );
 }
 
 //

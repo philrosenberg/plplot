@@ -29,6 +29,7 @@
 #include "disptab.h"
 #include "pldll.h"
 #include "qsastime.h"
+#include "plarray.h"
 
 //--------------------------------------------------------------------------
 // Define the PLDev data structure.
@@ -531,7 +532,7 @@ typedef struct
     PLINT ipls, level, verbose, debug, initialized, dev_initialized;
     //CONSTANT SOVERSION FIX
     //    PLBOOL     stream_closed;
-    char  *program;
+	plchararray  program;
 
 // Plot-wide coordinate transform
 
@@ -540,13 +541,13 @@ typedef struct
 
 // Colormaps
 
-    PLINT       icol0, ncol0, icol1, ncol1, ncp1, curcmap;
+    PLINT       icol0, icol1, ncp1, curcmap;
 
     PLFLT       cmap1_min, cmap1_max;
 
     PLColor     curcolor, tmpcolor;
-    PLColor     *cmap0;
-    PLColor     *cmap1;
+    plcolorarray cmap0;
+    plcolorarray cmap1;
 
     PLControlPt cmap1cp[PL_MAX_CMAP1CP];
 
@@ -556,9 +557,8 @@ typedef struct
     PLINT widthset, widthlock;
 
 // Variables governing arrow
-    PLFLT *arrow_x;
-    PLFLT *arrow_y;
-    PLINT arrow_npts;
+    plfltarray arrow_x;
+    plfltarray arrow_y;
     PLINT arrow_fill;
 
 // Driver dispatch table, obsoletes "device" member below.
@@ -638,7 +638,7 @@ typedef struct
 // Stuff used by TK, DP drivers
 
     char *server_name, *server_host, *server_port, *user;
-    char *plserver, *plwindow;
+	plchararray plserver, plwindow;
     char *auto_path;
     char *tk_file;  // plserver -file option
     int  bufmax, dp, server_nokill;

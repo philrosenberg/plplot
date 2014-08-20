@@ -512,13 +512,13 @@ plD_bop_ps( PLStream *pls )
     if ( pls->color )
     {
         PLFLT r, g, b;
-        if ( pls->cmap0[0].r != 0xFF ||
-             pls->cmap0[0].g != 0xFF ||
-             pls->cmap0[0].b != 0xFF )
+        if ( pls->cmap0.mem[0].r != 0xFF ||
+             pls->cmap0.mem[0].g != 0xFF ||
+             pls->cmap0.mem[0].b != 0xFF )
         {
-            r = ( (PLFLT) pls->cmap0[0].r ) / 255.;
-            g = ( (PLFLT) pls->cmap0[0].g ) / 255.;
-            b = ( (PLFLT) pls->cmap0[0].b ) / 255.;
+            r = ( (PLFLT) pls->cmap0.mem[0].r ) / 255.;
+            g = ( (PLFLT) pls->cmap0.mem[0].g ) / 255.;
+            b = ( (PLFLT) pls->cmap0.mem[0].b ) / 255.;
 
             fprintf( OF, "B %.4f %.4f %.4f C F\n", r, g, b );
         }

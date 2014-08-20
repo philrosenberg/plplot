@@ -1218,13 +1218,13 @@ void pl_set_extended_cmap0( PLStream *pls, int ncol0_width, int ncol0_org )
 
     for ( i = 1; i < ncol0_org; i++ )
     {
-        r = pls->cmap0[i].r;
-        g = pls->cmap0[i].g;
-        b = pls->cmap0[i].b;
+        r = pls->cmap0.mem[i].r;
+        g = pls->cmap0.mem[i].g;
+        b = pls->cmap0.mem[i].b;
 
-        r_inc = CalculateIncrement( pls->cmap0[0].r, r, ncol0_width );
-        g_inc = CalculateIncrement( pls->cmap0[0].g, g, ncol0_width );
-        b_inc = CalculateIncrement( pls->cmap0[0].b, b, ncol0_width );
+        r_inc = CalculateIncrement( pls->cmap0.mem[0].r, r, ncol0_width );
+        g_inc = CalculateIncrement( pls->cmap0.mem[0].g, g, ncol0_width );
+        b_inc = CalculateIncrement( pls->cmap0.mem[0].b, b, ncol0_width );
 
         for ( j = 0, k = ncol0_org + i - 1; j < ncol0_width; j++, k += ( ncol0_org - 1 ) )
         {

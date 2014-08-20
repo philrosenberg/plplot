@@ -145,7 +145,7 @@ c_plcol0( PLINT icol0 )
         plabort( "plcol0: Please call plinit first" );
         return;
     }
-    if ( icol0 < 0 || icol0 >= plsc->ncol0 )
+    if ( icol0 < 0 || icol0 >= ( PLINT )plsc->cmap0.n )
     {
         char buffer[BUFFER_SIZE];
         snprintf( buffer, BUFFER_SIZE, "plcol0: Invalid color map entry: %d", (int) icol0 );
@@ -154,10 +154,10 @@ c_plcol0( PLINT icol0 )
     }
 
     plsc->icol0      = icol0;
-    plsc->curcolor.r = plsc->cmap0[icol0].r;
-    plsc->curcolor.g = plsc->cmap0[icol0].g;
-    plsc->curcolor.b = plsc->cmap0[icol0].b;
-    plsc->curcolor.a = plsc->cmap0[icol0].a;
+    plsc->curcolor.r = plsc->cmap0.mem[icol0].r;
+    plsc->curcolor.g = plsc->cmap0.mem[icol0].g;
+    plsc->curcolor.b = plsc->cmap0.mem[icol0].b;
+    plsc->curcolor.a = plsc->cmap0.mem[icol0].a;
 
     plsc->curcmap = 0;
     plP_state( PLSTATE_COLOR0 );
@@ -181,7 +181,7 @@ c_plcol1( PLFLT col1 )
         plabort( "plcol1: Please call plinit first" );
         return;
     }
-    if ( col1 < 0 || col1 > 1 || isnan( col1 ) )
+    if ( col1 < 0. || col1 > 1. || isnan( col1 ) )
     {
         char buffer[BUFFER_SIZE];
         snprintf( buffer, BUFFER_SIZE, "plcol1: Invalid color map position: %f", (PLFLT) col1 );
@@ -189,14 +189,14 @@ c_plcol1( PLFLT col1 )
         return;
     }
 
-    icol1 = (PLINT) ( col1 * plsc->ncol1 );
-    icol1 = MIN( icol1, plsc->ncol1 - 1 );
+    icol1 = (PLINT) ( col1 * plsc->cmap1.n );
+    icol1 = MIN( ( size_t ) icol1, plsc->cmap1.n - 1 );
 
     plsc->icol1      = icol1;
-    plsc->curcolor.r = plsc->cmap1[plsc->icol1].r;
-    plsc->curcolor.g = plsc->cmap1[plsc->icol1].g;
-    plsc->curcolor.b = plsc->cmap1[plsc->icol1].b;
-    plsc->curcolor.a = plsc->cmap1[plsc->icol1].a;
+    plsc->curcolor.r = plsc->cmap1.mem[plsc->icol1].r;
+    plsc->curcolor.g = plsc->cmap1.mem[plsc->icol1].g;
+    plsc->curcolor.b = plsc->cmap1.mem[plsc->icol1].b;
+    plsc->curcolor.a = plsc->cmap1.mem[plsc->icol1].a;
 
     plsc->curcmap = 1;
     plP_state( PLSTATE_COLOR1 );
@@ -281,9 +281,11 @@ c_plgcolbga( PLINT *r, PLINT *g, PLINT *b, PLFLT *alpha )
 void
 c_plscol0( PLINT icol0, PLINT r, PLINT g, PLINT b )
 {
-    if ( plsc->cmap0 == NULL )
+	//set the default colours if cmap0 is empty
+    if ( plsc->cmap0.n == 0 )
         plscmap0n( 0 );
-    if ( icol0 < 0 || icol0 >= plsc->ncol0 )
+
+    if ( icol0 < 0 || ( size_t )icol0 >= plsc->cmap0.n )
     {
         char buffer[BUFFER_SIZE];
         snprintf( buffer, BUFFER_SIZE, "plscol0: Illegal color table value: %d", (int) icol0 );
@@ -317,9 +319,11 @@ c_plscol0( PLINT icol0, PLINT r, PLINT g, PLINT b )
 void
 c_plscol0a( PLINT icol0, PLINT r, PLINT g, PLINT b, PLFLT alpha )
 {
-    if ( plsc->cmap0 == NULL )
+	//set the default colours if cmap0 is empty
+    if ( plsc->cmap0.n == 0 )
         plscmap0n( 0 );
-    if ( icol0 < 0 || icol0 >= plsc->ncol0 )
+
+    if ( icol0 < 0 || ( size_t )icol0 >= plsc->cmap0.n )
     {
         char buffer[BUFFER_SIZE];
         snprintf( buffer, BUFFER_SIZE, "plscol0a: Illegal color table value: %d", (int) icol0 );
@@ -335,10 +339,10 @@ c_plscol0a( PLINT icol0, PLINT r, PLINT g, PLINT b, PLFLT alpha )
         return;
     }
 
-    plsc->cmap0[icol0].r = (unsigned char) r;
-    plsc->cmap0[icol0].g = (unsigned char) g;
-    plsc->cmap0[icol0].b = (unsigned char) b;
-    plsc->cmap0[icol0].a = alpha;
+    plsc->cmap0.mem[icol0].r = (unsigned char) r;
+    plsc->cmap0.mem[icol0].g = (unsigned char) g;
+    plsc->cmap0.mem[icol0].b = (unsigned char) b;
+    plsc->cmap0.mem[icol0].a = alpha;
 
     if ( plsc->level > 0 )
         plP_state( PLSTATE_CMAP0 );
@@ -358,14 +362,15 @@ c_plscol0a( PLINT icol0, PLINT r, PLINT g, PLINT b, PLFLT alpha )
 void
 c_plgcol0( PLINT icol0, PLINT *r, PLINT *g, PLINT *b )
 {
-    if ( plsc->cmap0 == NULL )
+	//set the default colours if cmap0 is empty
+    if ( plsc->cmap0.n == 0 )
         plscmap0n( 0 );
 
     *r = -1;
     *g = -1;
     *b = -1;
 
-    if ( icol0 < 0 || icol0 > plsc->ncol0 )
+    if ( icol0 < 0 || ( size_t )icol0 >= plsc->cmap0.n )
     {
         char buffer[BUFFER_SIZE];
         snprintf( buffer, BUFFER_SIZE, "plgcol0: Invalid color index: %d", (int) icol0 );
@@ -373,9 +378,9 @@ c_plgcol0( PLINT icol0, PLINT *r, PLINT *g, PLINT *b )
         return;
     }
 
-    *r = plsc->cmap0[icol0].r;
-    *g = plsc->cmap0[icol0].g;
-    *b = plsc->cmap0[icol0].b;
+    *r = plsc->cmap0.mem[icol0].r;
+    *g = plsc->cmap0.mem[icol0].g;
+    *b = plsc->cmap0.mem[icol0].b;
 
     return;
 }
@@ -395,7 +400,8 @@ c_plgcol0( PLINT icol0, PLINT *r, PLINT *g, PLINT *b )
 void
 c_plgcol0a( PLINT icol0, PLINT *r, PLINT *g, PLINT *b, PLFLT *alpha )
 {
-    if ( plsc->cmap0 == NULL )
+	//set the default colours if cmap0 is empty
+    if ( plsc->cmap0.n == 0 )
         plscmap0n( 0 );
 
     *r     = -1;
@@ -403,7 +409,7 @@ c_plgcol0a( PLINT icol0, PLINT *r, PLINT *g, PLINT *b, PLFLT *alpha )
     *b     = -1;
     *alpha = -1.0;
 
-    if ( icol0 < 0 || icol0 > plsc->ncol0 )
+    if ( icol0 < 0 || ( size_t )icol0 >= plsc->cmap0.n )
     {
         char buffer[BUFFER_SIZE];
         snprintf( buffer, BUFFER_SIZE, "plgcol0: Invalid color index: %d", (int) icol0 );
@@ -411,10 +417,10 @@ c_plgcol0a( PLINT icol0, PLINT *r, PLINT *g, PLINT *b, PLFLT *alpha )
         return;
     }
 
-    *r     = plsc->cmap0[icol0].r;
-    *g     = plsc->cmap0[icol0].g;
-    *b     = plsc->cmap0[icol0].b;
-    *alpha = plsc->cmap0[icol0].a;
+    *r     = plsc->cmap0.mem[icol0].r;
+    *g     = plsc->cmap0.mem[icol0].g;
+    *b     = plsc->cmap0.mem[icol0].b;
+    *alpha = plsc->cmap0.mem[icol0].a;
 
     return;
 }
@@ -433,11 +439,11 @@ c_plgcol0a( PLINT icol0, PLINT *r, PLINT *g, PLINT *b, PLFLT *alpha )
 void
 c_plscmap0( const PLINT *r, const PLINT *g, const PLINT *b, PLINT ncol0 )
 {
-    int i;
+    size_t i;
 
     plscmap0n( ncol0 );
 
-    for ( i = 0; i < plsc->ncol0; i++ )
+    for ( i = 0; i < plsc->cmap0.n; i++ )
     {
         if ( ( r[i] < 0 || r[i] > 255 ) ||
              ( g[i] < 0 || g[i] > 255 ) ||
@@ -450,10 +456,10 @@ c_plscmap0( const PLINT *r, const PLINT *g, const PLINT *b, PLINT ncol0 )
             return;
         }
 
-        plsc->cmap0[i].r = (unsigned char) r[i];
-        plsc->cmap0[i].g = (unsigned char) g[i];
-        plsc->cmap0[i].b = (unsigned char) b[i];
-        plsc->cmap0[i].a = 1.0;
+        plsc->cmap0.mem[i].r = (unsigned char) r[i];
+		plsc->cmap0.mem[i].g = (unsigned char) g[i];
+		plsc->cmap0.mem[i].b = (unsigned char) b[i];
+		plsc->cmap0.mem[i].a = 1.0;
     }
 
     if ( plsc->level > 0 )
@@ -475,11 +481,11 @@ c_plscmap0( const PLINT *r, const PLINT *g, const PLINT *b, PLINT ncol0 )
 void
 c_plscmap0a( const PLINT *r, const PLINT *g, const PLINT *b, const PLFLT *alpha, PLINT ncol0 )
 {
-    int i;
+    size_t i;
 
     plscmap0n( ncol0 );
 
-    for ( i = 0; i < plsc->ncol0; i++ )
+    for ( i = 0; i < plsc->cmap0.n; i++ )
     {
         if ( ( r[i] < 0 || r[i] > 255 ) ||
              ( g[i] < 0 || g[i] > 255 ) ||
@@ -493,10 +499,10 @@ c_plscmap0a( const PLINT *r, const PLINT *g, const PLINT *b, const PLFLT *alpha,
             return;
         }
 
-        plsc->cmap0[i].r = (unsigned char) r[i];
-        plsc->cmap0[i].g = (unsigned char) g[i];
-        plsc->cmap0[i].b = (unsigned char) b[i];
-        plsc->cmap0[i].a = alpha[i];
+        plsc->cmap0.mem[i].r = (unsigned char) r[i];
+        plsc->cmap0.mem[i].g = (unsigned char) g[i];
+        plsc->cmap0.mem[i].b = (unsigned char) b[i];
+        plsc->cmap0.mem[i].a = alpha[i];
     }
 
     if ( plsc->level > 0 )
@@ -517,11 +523,11 @@ c_plscmap0a( const PLINT *r, const PLINT *g, const PLINT *b, const PLFLT *alpha,
 void
 c_plscmap1( const PLINT *r, const PLINT *g, const PLINT *b, PLINT ncol1 )
 {
-    int i;
+    size_t i;
 
     plscmap1n( ncol1 );
 
-    for ( i = 0; i < plsc->ncol1; i++ )
+    for ( i = 0; i < plsc->cmap1.n; i++ )
     {
         if ( ( r[i] < 0 || r[i] > 255 ) ||
              ( g[i] < 0 || g[i] > 255 ) ||
@@ -533,10 +539,10 @@ c_plscmap1( const PLINT *r, const PLINT *g, const PLINT *b, PLINT ncol1 )
             plabort( buffer );
             return;
         }
-        plsc->cmap1[i].r = (unsigned char) r[i];
-        plsc->cmap1[i].g = (unsigned char) g[i];
-        plsc->cmap1[i].b = (unsigned char) b[i];
-        plsc->cmap1[i].a = 1.0;
+        plsc->cmap1.mem[i].r = (unsigned char) r[i];
+        plsc->cmap1.mem[i].g = (unsigned char) g[i];
+        plsc->cmap1.mem[i].b = (unsigned char) b[i];
+        plsc->cmap1.mem[i].a = 1.0;
     }
 
     if ( plsc->level > 0 )
@@ -558,11 +564,11 @@ c_plscmap1( const PLINT *r, const PLINT *g, const PLINT *b, PLINT ncol1 )
 void
 c_plscmap1a( const PLINT *r, const PLINT *g, const PLINT *b, const PLFLT *alpha, PLINT ncol1 )
 {
-    int i;
+    size_t i;
 
     plscmap1n( ncol1 );
 
-    for ( i = 0; i < plsc->ncol1; i++ )
+    for ( i = 0; i < plsc->cmap1.n; i++ )
     {
         if ( ( r[i] < 0 || r[i] > 255 ) ||
              ( g[i] < 0 || g[i] > 255 ) ||
@@ -575,10 +581,10 @@ c_plscmap1a( const PLINT *r, const PLINT *g, const PLINT *b, const PLFLT *alpha,
             plabort( buffer );
             return;
         }
-        plsc->cmap1[i].r = (unsigned char) r[i];
-        plsc->cmap1[i].g = (unsigned char) g[i];
-        plsc->cmap1[i].b = (unsigned char) b[i];
-        plsc->cmap1[i].a = alpha[i];
+        plsc->cmap1.mem[i].r = (unsigned char) r[i];
+        plsc->cmap1.mem[i].g = (unsigned char) g[i];
+        plsc->cmap1.mem[i].b = (unsigned char) b[i];
+        plsc->cmap1.mem[i].a = alpha[i];
     }
 
     if ( plsc->level > 0 )
@@ -664,7 +670,7 @@ c_plscmap1l( PLINT itype, PLINT npts, const PLFLT *intensity,
 
 // Allocate if not done yet
 
-    if ( plsc->cmap1 == NULL )
+    if ( plsc->cmap1.n == 0 )
         plscmap1n( 0 );
 
 // Save control points
@@ -750,7 +756,7 @@ c_plscmap1la( PLINT itype, PLINT npts, const PLFLT *intensity,
 
 // Allocate if not done yet
 
-    if ( plsc->cmap1 == NULL )
+    if ( plsc->cmap1.n == 0 )
         plscmap1n( 0 );
 
 // Save control points
@@ -803,7 +809,8 @@ c_plscmap1la( PLINT itype, PLINT npts, const PLFLT *intensity,
 void
 plcmap1_calc( void )
 {
-    int   i, n;
+    size_t i;
+	int    n;
     PLFLT delta, dp, dh, dl, ds, da;
     PLFLT h, l, s, p, r, g, b, a;
 
@@ -830,9 +837,9 @@ plcmap1_calc( void )
         // Loop over all color cells.  Only interested in cells located (in
         // cmap1 space)  between n_th and n+1_th control points
 
-        for ( i = 0; i < plsc->ncol1; i++ )
+        for ( i = 0; i < plsc->cmap1.n; i++ )
         {
-            p = (double) i / ( plsc->ncol1 - 1.0 );
+            p = (double) i / ( plsc->cmap1.n - 1.0 );
             if ( ( p < plsc->cmap1cp[n].p ) ||
                  ( p > plsc->cmap1cp[n + 1].p ) )
                 continue;
@@ -856,10 +863,10 @@ plcmap1_calc( void )
 
             c_plhlsrgb( h, l, s, &r, &g, &b );
 
-            plsc->cmap1[i].r = (unsigned char) MAX( 0, MIN( 255, (int) ( 256. * r ) ) );
-            plsc->cmap1[i].g = (unsigned char) MAX( 0, MIN( 255, (int) ( 256. * g ) ) );
-            plsc->cmap1[i].b = (unsigned char) MAX( 0, MIN( 255, (int) ( 256. * b ) ) );
-            plsc->cmap1[i].a = a;
+            plsc->cmap1.mem[i].r = (unsigned char) MAX( 0, MIN( 255, (int) ( 256. * r ) ) );
+            plsc->cmap1.mem[i].g = (unsigned char) MAX( 0, MIN( 255, (int) ( 256. * g ) ) );
+            plsc->cmap1.mem[i].b = (unsigned char) MAX( 0, MIN( 255, (int) ( 256. * b ) ) );
+            plsc->cmap1.mem[i].a = a;
         }
     }
 
@@ -931,47 +938,31 @@ c_plgcmap1_range( PLFLT *min_color, PLFLT *max_color )
 void
 c_plscmap0n( PLINT ncol0 )
 {
-    int ncol, size, imin, imax;
+    int ncol, imin, imax;
 
 // No change
 
-    if ( ncol0 > 0 && plsc->ncol0 == ncol0 )
+    if ( ncol0 > 0 && plsc->cmap0.n == ncol0 )
         return;
 
 // Handle all possible startup conditions
 
-    if ( plsc->ncol0 <= 0 && ncol0 <= 0 )
+    if ( plsc->cmap0.n == 0 && ncol0 <= 0 )
         ncol = 16;
     else if ( ncol0 <= 0 )
-        ncol = plsc->ncol0;
+        ncol = plsc->cmap0.n;
     else
         ncol = ncol0;
 
     imax = ncol - 1;
-    size = ncol * (int) sizeof ( PLColor );
 
 // Allocate the space
-
-    if ( plsc->cmap0 == NULL )
-    {
-        if ( ( plsc->cmap0 = (PLColor *) calloc( 1, (size_t) size ) ) == NULL )
-        {
-            plexit( "c_plscmap0n: Insufficient memory" );
-        }
-        imin = 0;
-    }
-    else
-    {
-        if ( ( plsc->cmap0 = (PLColor *) realloc( plsc->cmap0, (size_t) size ) ) == NULL )
-        {
-            plexit( "c_plscmap0n: Insufficient memory" );
-        }
-        imin = plsc->ncol0;
-    }
+	imin=plsc->cmap0.n;
+	plsc->cmap0.resize( &plsc->cmap0, ncol );
+	if ( plsc->cmap0.n != ncol )
+		plexit( "c_plscmap0n: Insufficient memory" );
 
 // Fill in default entries
-
-    plsc->ncol0 = ncol;
     plcmap0_def( imin, imax );
 
     if ( plsc->level > 0 )
@@ -993,11 +984,11 @@ c_plscmap0n( PLINT ncol0 )
 void
 color_set( PLINT i, U_CHAR r, U_CHAR g, U_CHAR b, PLFLT a, const char *name )
 {
-    plsc->cmap0[i].r    = r;
-    plsc->cmap0[i].g    = g;
-    plsc->cmap0[i].b    = b;
-    plsc->cmap0[i].a    = a;
-    plsc->cmap0[i].name = name;
+    plsc->cmap0.mem[i].r    = r;
+    plsc->cmap0.mem[i].g    = g;
+    plsc->cmap0.mem[i].b    = b;
+    plsc->cmap0.mem[i].a    = a;
+    plsc->cmap0.mem[i].name = name;
 }
 
 #define color_def( i, r, g, b, a, n ) \
@@ -1057,44 +1048,29 @@ void
 c_plscmap1n( PLINT ncol1 )
 {
     PLINT  ncol;
-    size_t size;
 
 // No change
 
-    if ( ncol1 > 0 && plsc->ncol1 == ncol1 )
+    if ( ncol1 > 0 && plsc->cmap1.n == ncol1 )
         return;
 
 // Handle all possible startup conditions
 
-    if ( plsc->ncol1 <= 0 && ncol1 <= 0 )
+    if ( plsc->cmap1.n == 0 && ncol1 <= 0 )
         ncol = 128;
     else if ( ncol1 <= 0 )
-        ncol = plsc->ncol1;
+        ncol = plsc->cmap1.n;
     else
         ncol = ncol1;
 
-    size = (size_t) ncol * sizeof ( PLColor );
 
 // Allocate the space
-
-    if ( plsc->ncol1 > 0 )
-    {
-        if ( ( plsc->cmap1 = (PLColor *) realloc( plsc->cmap1, size ) ) == NULL )
-        {
-            plexit( "c_plscmap1n: Insufficient memory" );
-        }
-    }
-    else
-    {
-        if ( ( plsc->cmap1 = (PLColor *) calloc( (size_t) ncol, sizeof ( PLColor ) ) ) == NULL )
-        {
-            plexit( "c_plscmap1n: Insufficient memory" );
-        }
-    }
+	plsc->cmap1.resize( &plsc->cmap1, ncol );
+	if ( plsc->cmap1.n != ncol )
+		plexit( "c_plscmap1n: Insufficient memory" );
 
 // Fill in default entries
 
-    plsc->ncol1 = ncol;
     if ( plsc->ncp1 == 0 )
         plcmap1_def();
     else
@@ -1131,10 +1107,10 @@ plcmap1_def( void )
 // For center control points, pick black or white, whichever is closer to bg
 // Be careful to pick just short of top or bottom else hue info is lost
 
-    if ( plsc->cmap0 != NULL )
-        vertex = ( (PLFLT) plsc->cmap0[0].r +
-                   (PLFLT) plsc->cmap0[0].g +
-                   (PLFLT) plsc->cmap0[0].b ) / 3. / 255.;
+    if ( plsc->cmap0.n > 0 )
+        vertex = ( (PLFLT) plsc->cmap0.mem[0].r +
+                   (PLFLT) plsc->cmap0.mem[0].g +
+                   (PLFLT) plsc->cmap0.mem[0].b ) / 3. / 255.;
 
     if ( vertex < 0.5 )
     {
@@ -1556,7 +1532,7 @@ c_plspal0( const char *filename )
     // done already.
     plscmap0n( 0 );
     // Allocate sufficient cmap0 colours to contain present data.
-    if ( number_colors > plsc->ncol0 )
+    if ( ( size_t )number_colors > plsc->cmap0.n )
     {
         plscmap0n( number_colors );
     }
@@ -1948,6 +1924,7 @@ void
 plexit( const char *errormsg )
 {
     int status = 1;
+	//plseterrcode( status );
 
     if ( exit_handler != NULL )
         status = ( *exit_handler )( errormsg );
@@ -1955,13 +1932,13 @@ plexit( const char *errormsg )
     plsc->nopause = 1;
     if ( *errormsg != '\0' )
     {
-        fprintf( stderr, "\n*** PLPLOT ERROR, IMMEDIATE EXIT ***\n" );
+        fprintf( stderr, "\n*** PLPLOT ERROR ***\n" );
         fprintf( stderr, "%s\n", errormsg );
     }
-    plend();
 
-    fprintf( stderr, "Program aborted\n" );
-    exit( status );
+    //plend();
+
+    //exit( status );
 }
 
 //--------------------------------------------------------------------------
@@ -1992,13 +1969,13 @@ plgetlasterr( )
 }
 
 //--------------------------------------------------------------------------
-// PLINT plsetlasterr( PLINT errorcode )
+// PLINT plseterrcode( PLINT errorcode )
 //
 //! Set the error from the last function call.
 //--------------------------------------------------------------------------
 
 void
-plsetlasterr( PLINT errorcode )
+plseterrcode( PLINT errorcode )
 {
 	plsc->internalerrorcode = errorcode;
 }
@@ -2543,29 +2520,29 @@ void
 plcol_interp( PLStream *pls, PLColor *newcolor, int i, int ncol )
 {
     PLFLT x, delta;
-    int   il, ir;
+    size_t   il, ir;
 
-    x     = (double) ( i * ( pls->ncol1 - 1 ) ) / (double) ( ncol - 1 );
+    x     = (double) ( i * ( pls->cmap1.n - 1 ) ) / (double) ( ncol - 1 );
     il    = (int) x;
     ir    = il + 1;
     delta = x - il;
 
-    if ( ir > pls->ncol1 || il < 0 )
+    if ( ir > pls->cmap1.n || x < 0 )
         fprintf( stderr, "Invalid color\n" );
 
-    else if ( ir == pls->ncol1 || ( delta == 0. ) )
+    else if ( ir == pls->cmap1.n || ( delta == 0. ) )
     {
-        newcolor->r = pls->cmap1[il].r;
-        newcolor->g = pls->cmap1[il].g;
-        newcolor->b = pls->cmap1[il].b;
-        newcolor->a = pls->cmap1[il].a;
+        newcolor->r = pls->cmap1.mem[il].r;
+        newcolor->g = pls->cmap1.mem[il].g;
+        newcolor->b = pls->cmap1.mem[il].b;
+        newcolor->a = pls->cmap1.mem[il].a;
     }
     else
     {
-        newcolor->r = (unsigned char) ( ( 1. - delta ) * pls->cmap1[il].r + delta * pls->cmap1[ir].r );
-        newcolor->g = (unsigned char) ( ( 1. - delta ) * pls->cmap1[il].g + delta * pls->cmap1[ir].g );
-        newcolor->b = (unsigned char) ( ( 1. - delta ) * pls->cmap1[il].b + delta * pls->cmap1[ir].b );
-        newcolor->a = ( 1. - delta ) * pls->cmap1[il].a + delta * pls->cmap1[ir].a;
+        newcolor->r = (unsigned char) ( ( 1. - delta ) * pls->cmap1.mem[il].r + delta * pls->cmap1.mem[ir].r );
+        newcolor->g = (unsigned char) ( ( 1. - delta ) * pls->cmap1.mem[il].g + delta * pls->cmap1.mem[ir].g );
+        newcolor->b = (unsigned char) ( ( 1. - delta ) * pls->cmap1.mem[il].b + delta * pls->cmap1.mem[ir].b );
+        newcolor->a = ( 1. - delta ) * pls->cmap1.mem[il].a + delta * pls->cmap1.mem[ir].a;
     }
 }
 

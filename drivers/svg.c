@@ -471,7 +471,7 @@ void poly_line( PLStream *pls, short *xa, short *ya, PLINT npts, short fill )
 
 void gradient( PLStream *pls, short *xa, short *ya, PLINT npts )
 {
-    int  i;
+    size_t  i;
     // 27 should be the maximum needed below, but be generous.
     char buffer[50];
     SVG  *aStream;
@@ -495,17 +495,17 @@ void gradient( PLStream *pls, short *xa, short *ya, PLINT npts )
     svg_attr_value( aStream, "y2", buffer );
     svg_general( aStream, ">\n" );
 
-    for ( i = 0; i < pls->ncol1; i++ )
+    for ( i = 0; i < pls->cmap1.n; i++ )
     {
         svg_indent( aStream );
         fprintf( aStream->svgFile, "<stop offset=\"%.3f\" ",
-            (double) i / (double) ( pls->ncol1 - 1 ) );
+            (double) i / (double) ( pls->cmap1.n - 1 ) );
         fprintf( aStream->svgFile, "stop-color=\"#" );
-        write_hex( aStream->svgFile, pls->cmap1[i].r );
-        write_hex( aStream->svgFile, pls->cmap1[i].g );
-        write_hex( aStream->svgFile, pls->cmap1[i].b );
+        write_hex( aStream->svgFile, pls->cmap1.mem[i].r );
+        write_hex( aStream->svgFile, pls->cmap1.mem[i].g );
+        write_hex( aStream->svgFile, pls->cmap1.mem[i].b );
         fprintf( aStream->svgFile, "\" " );
-        fprintf( aStream->svgFile, "stop-opacity=\"%.3f\"/>\n", pls->cmap1[i].a );
+        fprintf( aStream->svgFile, "stop-opacity=\"%.3f\"/>\n", pls->cmap1.mem[i].a );
     }
 
     svg_close( aStream, "linearGradient" );
@@ -515,7 +515,7 @@ void gradient( PLStream *pls, short *xa, short *ya, PLINT npts )
     svg_attr_value( aStream, "fill", buffer );
     svg_indent( aStream );
     fprintf( aStream->svgFile, "points=\"" );
-    for ( i = 0; i < npts; i++ )
+    for ( i = 0; i < ( size_t ) npts; i++ )
     {
         fprintf( aStream->svgFile, "%.2f,%.2f ", (double) xa[i] / aStream->scale, (double) ya[i] / aStream->scale );
         if ( ( ( i + 1 ) % 10 ) == 0 )
@@ -1119,12 +1119,12 @@ void svg_fill_background_color( PLStream *pls )
     aStream = pls->dev;
     svg_indent( aStream );
     fprintf( aStream->svgFile, "fill=\"#" );
-    write_hex( aStream->svgFile, pls->cmap0[0].r );
-    write_hex( aStream->svgFile, pls->cmap0[0].g );
-    write_hex( aStream->svgFile, pls->cmap0[0].b );
+    write_hex( aStream->svgFile, pls->cmap0.mem[0].r );
+    write_hex( aStream->svgFile, pls->cmap0.mem[0].g );
+    write_hex( aStream->svgFile, pls->cmap0.mem[0].b );
     fprintf( aStream->svgFile, "\"\n" );
     svg_indent( aStream );
-    fprintf( aStream->svgFile, "fill-opacity=\"%f\"\n", pls->cmap0[0].a );
+    fprintf( aStream->svgFile, "fill-opacity=\"%f\"\n", pls->cmap0.mem[0].a );
 }
 
 //--------------------------------------------------------------------------

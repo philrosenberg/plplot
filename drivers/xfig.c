@@ -154,12 +154,12 @@ plD_init_xfig( PLStream *pls )
     fprintf( pls->OutFile, "%d 2\n", DPI );
 
     // user defined colors, for colormap0
-    dev->cmap0_ncol = 2 * pls->ncol0; // allow for a maximum of 2x the default cmap0 entries
+    dev->cmap0_ncol = 2 * pls->cmap0.n; // allow for a maximum of 2x the default cmap0 entries
     dev->cmap0_pos  = ftell( pls->OutFile );
     stcmap0( pls );
 
     // user defined colors, for colormap1
-    dev->cmap1_ncol = 2 * pls->ncol1; // allow for a maximum of  2x the default cmap1 entries
+    dev->cmap1_ncol = 2 * pls->cmap1.n; // allow for a maximum of  2x the default cmap1 entries
     dev->cmap1_pos  = ftell( pls->OutFile );
     stcmap1( pls );
 
@@ -174,11 +174,11 @@ stcmap0( PLStream *pls )
 {
     xfig_Dev *dev;
     long     cur_pos;
-    int      i;
+    size_t      i;
 
     dev = (xfig_Dev *) pls->dev;
 
-    if ( pls->ncol0 > dev->cmap0_ncol )
+    if ( pls->cmap0.n > ( size_t )dev->cmap0_ncol )
         plwarn( "Too many colors for cmap0. Preallocate using command line '-ncol0 n.\n'" );
 
     cur_pos = ftell( pls->OutFile );
@@ -187,12 +187,12 @@ stcmap0( PLStream *pls )
         plexit( "Sorry, only file based output, no pipes.\n" );
 
     // fill the colormap
-    for ( i = 0; i < pls->ncol0; i++ )
+    for ( i = 0; i < pls->cmap0.n; i++ )
         fprintf( pls->OutFile, "0 %d #%.2x%.2x%.2x\n", i + XFIG_COLBASE,
-            pls->cmap0[i].r, pls->cmap0[i].g, pls->cmap0[i].b );
+            pls->cmap0.mem[i].r, pls->cmap0.mem[i].g, pls->cmap0.mem[i].b );
 
     // fill the nonspecified entries colormap
-    for ( i = pls->ncol0; i < dev->cmap0_ncol; i++ )
+    for ( i = pls->cmap0.n; i < ( size_t )dev->cmap0_ncol; i++ )
         fprintf( pls->OutFile, "0 %d #000000\n", i + XFIG_COLBASE );
 
     if ( cur_pos != dev->cmap0_pos )
@@ -204,11 +204,11 @@ stcmap1( PLStream *pls )
 {
     xfig_Dev *dev;
     long     cur_pos;
-    int      i;
+    size_t   i;
 
     dev = (xfig_Dev *) pls->dev;
 
-    if ( pls->ncol1 > dev->cmap1_ncol )
+    if ( pls->cmap1.n > ( size_t )dev->cmap1_ncol )
         plwarn( "Too many colors for cmap1. Preallocate using command line '-ncol1 n.\n'" );
 
     cur_pos = ftell( pls->OutFile );
@@ -217,12 +217,12 @@ stcmap1( PLStream *pls )
         plexit( "Sorry, only file based output, no pipes.\n" );
 
     // fill the colormap
-    for ( i = 0; i < pls->ncol1; i++ )
+    for ( i = 0; i < pls->cmap1.n; i++ )
         fprintf( pls->OutFile, "0 %d #%.2x%.2x%.2x\n", i + XFIG_COLBASE + dev->cmap0_ncol,
-            pls->cmap1[i].r, pls->cmap1[i].g, pls->cmap1[i].b );
+            pls->cmap1.mem[i].r, pls->cmap1.mem[i].g, pls->cmap1.mem[i].b );
 
     // fill the nonspecified entries colormap
-    for ( i = pls->ncol1; i < dev->cmap1_ncol; i++ )
+    for ( i = pls->cmap1.n; i < ( size_t )dev->cmap1_ncol; i++ )
         fprintf( pls->OutFile, "0 %d #000000\n", i + XFIG_COLBASE + dev->cmap0_ncol );
 
     if ( cur_pos != dev->cmap1_pos )
@@ -398,7 +398,7 @@ plD_state_xfig( PLStream *pls, PLINT op )
 
     case PLSTATE_COLOR1:
         flushbuffer( pls );
-        dev->curcol = pls->icol1 + XFIG_COLBASE + pls->ncol0;
+        dev->curcol = pls->icol1 + XFIG_COLBASE + pls->cmap0.n;
         break;
 
     case PLSTATE_CMAP0:
@@ -421,7 +421,7 @@ plD_state_xfig( PLStream *pls, PLINT op )
 void
 plD_esc_xfig( PLStream *pls, PLINT op, void *ptr )
 {
-    xfig_Dev *dev = pls->dev;
+    xfig_Dev *dev = (xfig_Dev*)pls->dev;
     int      i, npts;
 
     switch ( op )
@@ -442,7 +442,7 @@ plD_esc_xfig( PLStream *pls, PLINT op, void *ptr )
         break;
 
     case PLESC_HAS_TEXT:
-        proc_str( pls, ptr );
+        proc_str( pls, ( EscText* )ptr );
         break;
     }
 }
@@ -454,7 +454,7 @@ plD_esc_xfig( PLStream *pls, PLINT op, void *ptr )
 static void
 flushbuffer( PLStream *pls )
 {
-    xfig_Dev *dev = pls->dev;
+    xfig_Dev *dev = ( xfig_Dev * )pls->dev;
     int      i    = 0;
 
     if ( dev->count == 0 )
