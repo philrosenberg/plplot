@@ -2168,6 +2168,7 @@ plconstructarrays( PLStream * pls )
 		constructplchararray( &pls->server_name, 0 );
 		constructplchararray( &pls->server_port, 0 );
 		constructplchararray( &pls->user, 0 );
+		constructplchararray( &pls->timefmt, 0 );
 	}
 
 	pls->constructedarrays=1;
@@ -2197,6 +2198,7 @@ pldestroyarrays( PLStream * pls )
 		pls->server_host.destroy( &pls->server_host );
 		pls->server_port.destroy( &pls->server_port );
 		pls->user.destroy( &pls->user );
+		pls->timefmt.destroy( &plsc->timefmt );
 	}
 	
 	pls->constructedarrays=0;
@@ -2380,7 +2382,7 @@ c_plinit( void )
     if ( plsc->zdigmax == 0 )
         plsc->zdigmax = 3;
 
-    if ( plsc->timefmt == NULL )
+    if ( plsc->timefmt.n == 0 )
         c_pltimefmt( "%c" );
 
     // Use default transformation between continuous and broken-down time
@@ -2510,9 +2512,6 @@ c_plend1( void )
     if ( plsc->auto_path )
         free_mem( plsc->auto_path );
 
-
-    if ( plsc->timefmt )
-        free_mem( plsc->timefmt );
 
     // Close qsastime library for this stream that was opened by
     // plconfigtime call in plinit.
@@ -3765,7 +3764,7 @@ plP_gprec( PLINT *p_setp, PLINT *p_prec )
 const char *
 plP_gtimefmt()
 {
-    return (const char *) plsc->timefmt;
+    return (const char *) plsc->timefmt.mem;
 }
 
 //

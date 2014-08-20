@@ -698,7 +698,7 @@ typedef struct
     PLINT     setpre, precis;
     PLINT     xdigmax, ydigmax, zdigmax;
     PLINT     xdigits, ydigits, zdigits;
-    char      *timefmt;
+    plchararray timefmt;
     void ( *label_func )( PLINT, PLFLT, char *, PLINT, PLPointer );
     PLPointer label_data;
 

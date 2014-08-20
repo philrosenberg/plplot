@@ -61,10 +61,9 @@ c_plctime( PLINT year, PLINT month, PLINT day, PLINT hour, PLINT min, PLFLT sec,
 void
 c_pltimefmt( const char *fmt )
 {
-    if ( plsc->timefmt )
-        free_mem( plsc->timefmt );
-
-    plsc->timefmt = (char *) malloc( (size_t) ( strlen( fmt ) + 1 ) );
-    strcpy( plsc->timefmt, fmt );
+	plsc->timefmt.resize( &plsc->timefmt, strlen( fmt ) + 1 );
+	if( plsc->timefmt.n != strlen( fmt ) + 1 )
+		plexit ( "pltimefmt: Insufficient memory" );
+    strcpy( plsc->timefmt.mem, fmt );
 }
 
