@@ -2161,6 +2161,8 @@ plconstructarrays( PLStream * pls )
 		constructplfltarray( &pls->arrow_y, 0 );
 		constructplchararray( &pls->plserver, 0 );
 		constructplchararray( &pls->plwindow, 0 );
+		constructplchararray( &pls->BaseName, 0 );
+		constructplchararray( &pls->FileName, 0 );
 	}
 
 	pls->constructedarrays=1;
@@ -2183,6 +2185,8 @@ pldestroyarrays( PLStream * pls )
 		pls->arrow_y.destroy( &pls->arrow_y );
 		pls->plserver.destroy( &pls->plserver );
 		pls->plwindow.destroy( &pls->plwindow );
+		pls->BaseName.destroy( &pls->BaseName );
+		pls->FileName.destroy( &pls->FileName );
 	}
 	
 	pls->constructedarrays=0;
@@ -2486,15 +2490,11 @@ c_plend1( void )
         plP_tidy();
         plsc->level = 0;
     }
-    // Move from plP_tidy because FileName may be set even if level == 0
-    if ( plsc->FileName )
-        free_mem( plsc->FileName );
 
 // Free all malloc'ed stream memory
 	pldestroyarrays( plsc );
     free_mem( plsc->geometry );
     free_mem( plsc->dev );
-    free_mem( plsc->BaseName );
 #ifndef BUFFERED_FILE
     free_mem( plsc->plbuf_buffer );
 #endif
@@ -3720,9 +3720,9 @@ c_plgfnam( char *fnam )
     }
 
     *fnam = '\0';
-    if ( plsc->FileName != NULL )
+    if ( plsc->FileName.n > 0 )
     {
-        strncpy( fnam, plsc->FileName, 79 );
+        strncpy( fnam, plsc->FileName.mem, 79 );
         fnam[79] = '\0';
     }
 }

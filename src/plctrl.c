@@ -2560,7 +2560,7 @@ plcol_interp( PLStream *pls, PLColor *newcolor, int i, int ncol )
 void
 plOpenFile( PLStream *pls )
 {
-    int    i = 0, count = 0;
+    int    count = 0;
     size_t len;
     char   line[BUFFER_SIZE];
 
@@ -2569,12 +2569,12 @@ plOpenFile( PLStream *pls )
 // Setting pls->FileName = NULL forces creation of a new family member
 // You should also free the memory associated with it if you do this
 
-        if ( pls->family && pls->BaseName != NULL )
+        if ( pls->family && pls->BaseName.n != 0 )
             plP_getmember( pls );
 
 // Prompt if filename still not known
 
-        if ( pls->FileName == NULL )
+        if ( pls->FileName.n == 0 )
         {
             do
             {
@@ -2588,10 +2588,13 @@ plOpenFile( PLStream *pls )
             } while ( !len && count < MAX_NUM_TRIES );
             plP_sfnam( pls, line );
         }
+		
+        if ( count == MAX_NUM_TRIES )
+            plexit( "plOpenFile: Too many tries to enter name." );
 
 // If name is "-", send to stdout
 
-        if ( !strcmp( pls->FileName, "-" ) )
+        if ( !strcmp( pls->FileName.mem, "-" ) )
         {
             pls->OutFile     = stdout;
             pls->output_type = 1;
@@ -2600,13 +2603,10 @@ plOpenFile( PLStream *pls )
 
 // Need this here again, for prompted family initialization
 
-        if ( pls->family && pls->BaseName != NULL )
+        if ( pls->family && pls->BaseName.n != 0 )
             plP_getmember( pls );
 
-        if ( i++ > 10 )
-            plexit( "Too many tries." );
-
-        if ( ( pls->OutFile = fopen( pls->FileName, "wb+" ) ) == NULL )
+        if ( ( pls->OutFile = fopen( pls->FileName.mem, "wb+" ) ) == NULL )
             fprintf( stderr, "Can't open %s.\n", pls->FileName );
         else
             pldebug( "plOpenFile", "Opened %s\n", pls->FileName );
@@ -2627,7 +2627,7 @@ plCloseFile( PLStream *pls )
     if ( pls->OutFile != NULL )
     {
         // Don't close if the output file was stdout
-        if ( pls->FileName && strcmp( pls->FileName, "-" ) == 0 )
+        if ( pls->FileName.n > 0 && strcmp( pls->FileName.mem, "-" ) == 0 )
             return;
 
         fclose( pls->OutFile );
@@ -2652,27 +2652,25 @@ plP_getmember( PLStream *pls )
     char   num[BUFFER_SIZE];
     size_t maxlen;
 
-    maxlen = strlen( pls->BaseName ) + 10;
-    if ( pls->FileName == NULL )
+    maxlen = strlen( pls->BaseName.mem ) + 10;
+	pls->FileName.resize( &pls->FileName, maxlen );
+    if ( pls->FileName.n != maxlen )
     {
-        if ( ( pls->FileName = (char *) malloc( maxlen ) ) == NULL )
-        {
-            plexit( "plP_getmember: Insufficient memory" );
-        }
+        plexit( "plP_getmember: Insufficient memory" );
     }
 
-    suffix = strstr( pls->BaseName, "%n" );
+    suffix = strstr( pls->BaseName.mem, "%n" );
 
     snprintf( tmp, BUFFER_SIZE, "%%0%1ii", (int) pls->fflen );
     snprintf( num, BUFFER_SIZE, tmp, pls->member );
 
     if ( suffix == NULL )
-        snprintf( pls->FileName, maxlen, "%s.%s", pls->BaseName, num );
+        snprintf( pls->FileName.mem, maxlen, "%s.%s", pls->BaseName, num );
     else
     {
-        strncpy( prefix, pls->BaseName, BUFFER_SIZE - 1 );
-        prefix [( suffix - pls->BaseName < BUFFER_SIZE ) ? ( suffix - pls->BaseName ) : BUFFER_SIZE - 1] = '\0';
-        snprintf( pls->FileName, maxlen, "%s%s%s", prefix, num, suffix + 2 );
+        strncpy( prefix, pls->BaseName.mem, BUFFER_SIZE - 1 );
+        prefix [( suffix - pls->BaseName.mem < BUFFER_SIZE ) ? ( suffix - pls->BaseName.mem ) : BUFFER_SIZE - 1] = '\0';
+        snprintf( pls->FileName.mem, maxlen, "%s%s%s", prefix, num, suffix + 2 );
     }
 }
 
@@ -2690,15 +2688,13 @@ void
 plP_sfnam( PLStream *pls, const char *fnam )
 {
     char   prefix[BUFFER_SIZE];
-    char   * suffix;
+    const char  * suffix;
     size_t maxlen;
     pls->OutFile = NULL;
 
-    if ( pls->FileName != NULL )
-        free( (void *) pls->FileName );
-
     maxlen = 10 + strlen( fnam );
-    if ( ( pls->FileName = (char *) malloc( maxlen ) ) == NULL )
+	pls->FileName.resize( &pls->FileName, maxlen );
+    if ( pls->FileName.n != maxlen )
     {
         plexit( "plP_sfnam: Insufficient memory" );
     }
@@ -2707,26 +2703,24 @@ plP_sfnam( PLStream *pls, const char *fnam )
 
     if ( suffix == NULL )
     {
-        strncpy( pls->FileName, fnam, maxlen - 1 );
-        pls->FileName[maxlen - 1] = '\0';
+        strncpy( pls->FileName.mem, fnam, maxlen - 1 );
+        pls->FileName.mem[maxlen - 1] = '\0';
     }
     else
     {
         strncpy( prefix, fnam, BUFFER_SIZE - 1 );
         prefix [( suffix - fnam ) < BUFFER_SIZE ? ( suffix - fnam ) : BUFFER_SIZE - 1] = '\0';
-        snprintf( pls->FileName, maxlen, "%s%s", prefix, suffix + 2 );
+        snprintf( pls->FileName.mem, maxlen, "%s%s", prefix, suffix + 2 );
     }
 
-    if ( pls->BaseName != NULL )
-        free( (void *) pls->BaseName );
-
-    if ( ( pls->BaseName = (char *) malloc( maxlen ) ) == NULL )
+	pls->BaseName.resize( &pls->BaseName, maxlen );
+    if ( pls->BaseName.n != maxlen )
     {
         plexit( "plP_sfnam: Insufficient memory" );
     }
 
-    strncpy( pls->BaseName, fnam, maxlen - 1 );
-    pls->BaseName[maxlen - 1] = '\0';
+    strncpy( pls->BaseName.mem, fnam, maxlen - 1 );
+    pls->BaseName.mem[maxlen - 1] = '\0';
 }
 
 //--------------------------------------------------------------------------

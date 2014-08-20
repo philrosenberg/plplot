@@ -576,7 +576,7 @@ typedef struct
 
     char    DevName[80];
     FILE    *OutFile;
-    char    *BaseName, *FileName;
+    plchararray  BaseName, FileName;
     int     output_type;
     PLINT   bytecnt, page, linepos;
     PDFstrm *pdfs;
