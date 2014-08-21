@@ -1102,7 +1102,7 @@ wr_command( PLStream *pls, U_CHAR c )
 	size_t oldallocated=pls->plbuf_buffer.allocated;
 	pls->plbuf_buffer.pushback( &pls->plbuf_buffer, c );
 	if( pls->plbuf_buffer.n != oldn + 1 )
-        plexit( "plbuf wr_data:  Plot buffer grow failed" );
+        plexit( "plbuf wr_command:  Plot buffer grow failed" );
 	if( pls->plbuf_buffer.allocated != oldallocated && pls->verbose )
 		printf( "Growing buffer to %d KB\n", (int) ( pls->plbuf_buffer.allocated / 1024 ) );
 #endif
@@ -1123,7 +1123,7 @@ wr_data( PLStream *pls, void *buf, size_t buf_size )
 	size_t oldn=pls->plbuf_buffer.n;
 	size_t oldallocated=pls->plbuf_buffer.allocated;
 	pls->plbuf_buffer.appendmem( &pls->plbuf_buffer, (U_CHAR *)buf, buf_size );
-	if( pls->plbuf_buffer.n != oldn + 1 )
+	if( pls->plbuf_buffer.n != oldn + buf_size )
         plexit( "plbuf wr_data:  Plot buffer grow failed" );
 	if( pls->plbuf_buffer.allocated != oldallocated && pls->verbose )
 		printf( "Growing buffer to %d KB\n", (int) ( pls->plbuf_buffer.allocated / 1024 ) );

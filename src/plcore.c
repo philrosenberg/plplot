@@ -2170,6 +2170,7 @@ plconstructarrays( PLStream * pls )
 		constructplchararray( &pls->user, 0 );
 		constructplchararray( &pls->timefmt, 0 );
 		constructplchararray( &pls->auto_path, 0 );
+		constructpluchararray( &pls->plbuf_buffer, 0 );
 	}
 
 	pls->constructedarrays=1;
@@ -2201,6 +2202,7 @@ pldestroyarrays( PLStream * pls )
 		pls->user.destroy( &pls->user );
 		pls->timefmt.destroy( &plsc->timefmt );
 		pls->auto_path.destroy( &plsc->auto_path );
+		pls->plbuf_buffer.destroy( &pls->plbuf_buffer );
 	}
 	
 	pls->constructedarrays=0;
