@@ -130,7 +130,10 @@ create_canvas( PLStream *pls )
     columnbreak = ( ccanv % 30 == 0 );
 
     // create new canvas
-    sprintf( cmd, "set ccanv %d; canvas $plf.f2.c$ccanv -width $xmax -height $ymax -background #%02x%02x%02x -xscrollcommand \"$hs set\" -yscrollcommand \"$vs set\" -scrollregion \"0 0 $xmax $ymax\"", ccanv, pls->cmap0[0].r, pls->cmap0[0].g, pls->cmap0[0].b );
+	if( pls->cmap0.n > 0 )
+		sprintf( cmd, "set ccanv %d; canvas $plf.f2.c$ccanv -width $xmax -height $ymax -background #%02x%02x%02x -xscrollcommand \"$hs set\" -yscrollcommand \"$vs set\" -scrollregion \"0 0 $xmax $ymax\"", ccanv, pls->cmap0.mem[0].r, pls->cmap0.mem[0].g, pls->cmap0.mem[0].b );
+	else
+		sprintf( cmd, "set ccanv %d; canvas $plf.f2.c$ccanv -width $xmax -height $ymax -background #%02x%02x%02x -xscrollcommand \"$hs set\" -yscrollcommand \"$vs set\" -scrollregion \"0 0 $xmax $ymax\"", ccanv, 255, 255, 255 );
     tk_cmd( cmd );
 
     // add new canvas to option menu
@@ -235,14 +238,14 @@ plD_init_ntk( PLStream *pls )
 
     strcpy( curcolor, "black" ); // default color by name, not #rrggbb
 
-    if ( pls->server_name != NULL )
+	if ( pls->server_name.n != 0 )
     {
         local = 0;
-        strcpy( rem_interp, pls->server_name );
+        strcpy( rem_interp, pls->server_name.mem );
     }
 
-    if ( pls->geometry != NULL )
-        sscanf( pls->geometry, "%dx%d", &xmax, &ymax );
+    if ( pls->geometry.n != 0 )
+        sscanf( pls->geometry.mem, "%dx%d", &xmax, &ymax );
 
 //  if ( pls->plwindow != NULL )
 //        strcpy( base, pls->plwindow );

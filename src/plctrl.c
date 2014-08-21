@@ -1361,7 +1361,6 @@ read_line( char *buffer, int length, FILE *fp )
 // cmap0_palette_read()
 //
 //! Read and check r, g, b, a data from a cmap0*.pal format file.
-//! The caller must free the returned malloc'ed space for r, g, b, and a.
 //!
 //! @param filename name of the cmap0 palette file.
 //! @param number_colors number of color found in the palette file.
