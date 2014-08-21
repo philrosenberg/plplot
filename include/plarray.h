@@ -38,11 +38,13 @@ typedef struct pl##name##array\
 	type *mem;\
 	size_t allocated;\
 	void (*pushback)( struct pl##name##array *thisone, type val );\
+	type (*popback)( struct pl##name##array *thisone );\
 	void (*resize)( struct pl##name##array *thisone, size_t nelements );\
 	void (*destroy)( struct pl##name##array *thisone );\
 	void (*shrinktofit)( struct pl##name##array *thisone );\
 	void (*copyfromarray)( struct pl##name##array *thisone, struct pl##name##array source );\
 	void (*copyfrommem)( struct pl##name##array *thisone, const type *source, size_t n );\
+	void (*appendmem)( struct pl##name##array *thisone, const type *source, size_t n );\
 } pl##name##array;\
 \
 void constructpl##name##array( pl##name##array *thisone, size_t n );

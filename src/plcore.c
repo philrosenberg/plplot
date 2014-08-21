@@ -2507,9 +2507,6 @@ c_plend1( void )
 
 // Free all stream arrays
 	pldestroyarrays( plsc );
-#ifndef BUFFERED_FILE
-    free_mem( plsc->plbuf_buffer );
-#endif
 
 
     // Close qsastime library for this stream that was opened by
@@ -2701,13 +2698,10 @@ c_plcpstrm( PLINT iplsr, PLINT flags )
 #ifdef BUFFERED_FILE
     plsc->plbufFile = plsr->plbufFile;
 #else
-    plsc->plbuf_buffer_grow = plsr->plbuf_buffer_grow;
-    plsc->plbuf_buffer_size = plsr->plbuf_buffer_size;
-    plsc->plbuf_top         = plsr->plbuf_top;
     plsc->plbuf_readpos     = plsr->plbuf_readpos;
-    if ( ( plsc->plbuf_buffer = malloc( plsc->plbuf_buffer_size ) ) == NULL )
+	plsc->plbuf_buffer.copyfromarray( &plsc->plbuf_buffer, plsr->plbuf_buffer );
+    if (  plsc->plbuf_buffer.n !=  plsr->plbuf_buffer.n )
         plexit( "plcpstrm: Error allocating plot buffer." );
-    memcpy( plsc->plbuf_buffer, plsr->plbuf_buffer, plsr->plbuf_top );
 #endif
 
 // Driver interface
@@ -3407,7 +3401,7 @@ c_plreplot( void )
     if ( plsc->plbufFile != NULL )
     {
 #else
-    if ( plsc->plbuf_buffer != NULL )
+    if ( plsc->plbuf_buffer.n != 0 )
     {
 #endif
         plRemakePlot( plsc );

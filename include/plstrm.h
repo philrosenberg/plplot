@@ -648,10 +648,10 @@ typedef struct
 #ifdef BUFFERED_FILE
     FILE   *plbufFile;
 #else
-    size_t plbuf_buffer_grow;
-    size_t plbuf_buffer_size;
-    void   *plbuf_buffer;
-    size_t plbuf_top;
+    //size_t plbuf_buffer_grow;
+    //size_t plbuf_buffer_size;
+    pluchararray plbuf_buffer;
+    //size_t plbuf_top;
     size_t plbuf_readpos;
 #endif
     int    plbufOwner;

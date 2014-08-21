@@ -69,8 +69,8 @@ plbuf_init( PLStream *pls )
     if ( pls->plbufFile != NULL )
         pls->plbuf_write = FALSE;
 #else
-    if ( pls->plbuf_buffer != NULL )
-        pls->plbuf_write = FALSE;
+	if ( pls->plbuf_buffer.n != 0 )
+        pls->plbuf_write = FALSE; //to do, what is this about
 #endif
 }
 
@@ -152,24 +152,8 @@ plbuf_bop( PLStream *pls )
     if ( pls->plbufFile == NULL )
         plexit( "plbuf_bop: Error opening plot data storage file." );
 #else
-    // Need a better place to initialize this value
-    pls->plbuf_buffer_grow = 128 * 1024;
-
-    if ( pls->plbuf_buffer == NULL )
-    {
-        // We have not allocated a buffer, so do it now
-        if ( ( pls->plbuf_buffer = malloc( pls->plbuf_buffer_grow ) ) == NULL )
-            plexit( "plbuf_bop: Error allocating plot buffer." );
-
-        pls->plbuf_buffer_size = pls->plbuf_buffer_grow;
-        pls->plbuf_top         = 0;
-        pls->plbuf_readpos     = 0;
-    }
-    else
-    {
-        // Buffer is allocated, move the top to the beginning
-        pls->plbuf_top = 0;
-    }
+	pls->plbuf_buffer.resize( &pls->plbuf_buffer, 0 );
+    pls->plbuf_readpos = 0;
 #endif
 
     wr_command( pls, (U_CHAR) BOP );
@@ -981,7 +965,7 @@ plRemakePlot( PLStream *pls )
     {
         rewind( pls->plbufFile );
 #else
-    if ( pls->plbuf_buffer )
+    if ( pls->plbuf_buffer.n > 0 )
     {
         pls->plbuf_readpos = 0;
 #endif
@@ -1067,10 +1051,10 @@ rd_command( PLStream *pls, U_CHAR *p_c )
 #ifdef BUFFERED_FILE
     count = fread( p_c, sizeof ( U_CHAR ), 1, pls->plbufFile );
 #else
-    if ( pls->plbuf_readpos < pls->plbuf_top )
+    if ( pls->plbuf_readpos < pls->plbuf_buffer.n )
     {
-        *p_c = *(U_CHAR *) ( (U_CHAR *) pls->plbuf_buffer + pls->plbuf_readpos );
-        pls->plbuf_readpos += sizeof ( U_CHAR );
+        *p_c = pls->plbuf_buffer.mem[ pls->plbuf_readpos ];
+        ++pls->plbuf_readpos;
         count = sizeof ( U_CHAR );
     }
     else
@@ -1097,7 +1081,7 @@ rd_data( PLStream *pls, void *buf, size_t buf_size )
 // then this code will have problems.  A better approach might be to use
 // uint8_t from <stdint.h> but I do not know how portable that approach is
 //
-    memcpy( buf, (U_CHAR *) pls->plbuf_buffer + pls->plbuf_readpos, buf_size );
+    memcpy( buf, (U_CHAR *) pls->plbuf_buffer.mem + pls->plbuf_readpos, buf_size );
     pls->plbuf_readpos += buf_size;
 #endif
 }
@@ -1114,19 +1098,13 @@ wr_command( PLStream *pls, U_CHAR c )
 #ifdef BUFFERED_FILE
     plio_fwrite( &c1, sizeof ( U_CHAR ), 1, pls->plbufFile );
 #else
-    if ( ( pls->plbuf_top + sizeof ( U_CHAR ) ) >= pls->plbuf_buffer_size )
-    {
-        // Not enough space, need to grow the buffer
-        pls->plbuf_buffer_size += pls->plbuf_buffer_grow;
-
-        if ( pls->verbose )
-            printf( "Growing buffer to %d KB\n", (int) ( pls->plbuf_buffer_size / 1024 ) );
-        if ( ( pls->plbuf_buffer = realloc( pls->plbuf_buffer, pls->plbuf_buffer_size ) ) == NULL )
-            plexit( "plbuf wr_data:  Plot buffer grow failed" );
-    }
-
-    *(U_CHAR *) ( (U_CHAR *) pls->plbuf_buffer + pls->plbuf_top ) = c;
-    pls->plbuf_top += sizeof ( U_CHAR );
+	size_t oldn=pls->plbuf_buffer.n;
+	size_t oldallocated=pls->plbuf_buffer.allocated;
+	pls->plbuf_buffer.pushback( &pls->plbuf_buffer, c );
+	if( pls->plbuf_buffer.n != oldn + 1 )
+        plexit( "plbuf wr_data:  Plot buffer grow failed" );
+	if( pls->plbuf_buffer.allocated != oldallocated && pls->verbose )
+		printf( "Growing buffer to %d KB\n", (int) ( pls->plbuf_buffer.allocated / 1024 ) );
 #endif
 }
 
@@ -1142,26 +1120,13 @@ wr_data( PLStream *pls, void *buf, size_t buf_size )
 #ifdef BUFFERED_FILE
     plio_fwrite( buf, buf_size, 1, pls->plbufFile );
 #else
-    if ( ( pls->plbuf_top + buf_size ) >= pls->plbuf_buffer_size )
-    {
-        // Not enough space, need to grow the buffer
-        // Must make sure the increase is enough for this data
-        pls->plbuf_buffer_size += pls->plbuf_buffer_grow *
-                                  ( ( pls->plbuf_top + buf_size - pls->plbuf_buffer_size ) /
-                                    pls->plbuf_buffer_grow + 1 );
-        while ( pls->plbuf_top + buf_size >= pls->plbuf_buffer_size )
-            ;
-
-        if ( ( pls->plbuf_buffer = realloc( pls->plbuf_buffer, pls->plbuf_buffer_size ) ) == NULL )
-            plexit( "plbuf wr_data:  Plot buffer grow failed" );
-    }
-
-// If U_CHAR is not the same size as what memcpy() expects (typically 1 byte)
-// then this code will have problems.  A better approach might be to use
-// uint8_t from <stdint.h> but I do not know how portable that approach is
-//
-    memcpy( (U_CHAR *) pls->plbuf_buffer + pls->plbuf_top, buf, buf_size );
-    pls->plbuf_top += buf_size;
+	size_t oldn=pls->plbuf_buffer.n;
+	size_t oldallocated=pls->plbuf_buffer.allocated;
+	pls->plbuf_buffer.appendmem( &pls->plbuf_buffer, (U_CHAR *)buf, buf_size );
+	if( pls->plbuf_buffer.n != oldn + 1 )
+        plexit( "plbuf wr_data:  Plot buffer grow failed" );
+	if( pls->plbuf_buffer.allocated != oldallocated && pls->verbose )
+		printf( "Growing buffer to %d KB\n", (int) ( pls->plbuf_buffer.allocated / 1024 ) );
 #endif
 }
 
