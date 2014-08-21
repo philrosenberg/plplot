@@ -1460,7 +1460,7 @@ cmap0_palette_read( const char *filename, pluintarray *r, pluintarray *g,
 			b->pushback( b, btemp );
 			a->pushback( a, atemp );
 
-			if( r->n != g->n || r->n != b->n || r->n != r->allocated || r->n != i+1 ) 
+			if( r->n != g->n || r->n != b->n || r->n != a->n || r->n != i+1 ) 
 			{
 				err = 1;
 				break;
@@ -1494,7 +1494,7 @@ cmap0_palette_read( const char *filename, pluintarray *r, pluintarray *g,
 			b->pushback( b, 0 );
 			a->pushback( a, 1. );
         }
-		if( r->n != g->n || r->n != b->n || r->n != r->allocated || r->n != number_colors )
+		if( r->n != g->n || r->n != b->n || r->n != a->n || r->n != number_colors )
 		{
 			plexit( "cmap0_pallette_read: Insufficient memory" );
 		}
