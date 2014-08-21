@@ -26,8 +26,7 @@ void resizepl##name##array( pl##name##array *thisone, size_t n )\
 	{\
 		type *mem;\
 		size_t newsize = thisone->allocated*2;\
-		if ( newsize < n )\
-			newsize = n;\
+		newsize = newsize < n ? n : newsize;\
 		mem=(type*)malloc( newsize * sizeof( type ) );\
 		if( !mem )\
 			return;\
@@ -37,6 +36,7 @@ void resizepl##name##array( pl##name##array *thisone, size_t n )\
 			free( thisone->mem );\
 		}\
 		thisone->mem = mem;\
+		thisone->allocated = newsize;\
 	}\
 	thisone->n = n;\
 }\
