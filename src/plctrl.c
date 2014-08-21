@@ -86,7 +86,7 @@ static void
 ( *abort_handler )( const char *errormsg );
 
 static void
-plcmap0_def( int imin, int imax );
+plcmap0_def( size_t imin, size_t imax );
 
 static void
 plcmap1_def( void );
@@ -98,9 +98,8 @@ static char *
 read_line( char *buffer, int length, FILE *fp );
 
 static void
-cmap0_palette_read( const char *filename,
-                    int *number_colors, unsigned int **r, unsigned int **g,
-                    unsigned int **b, double **a );
+cmap0_palette_read( const char *filename, pluintarray *r, pluintarray *g,
+                    pluintarray *b, pldoublearray *a );
 
 // An additional hardwired location for lib files.
 // I have no plans to change these again, ever.
@@ -938,7 +937,7 @@ c_plgcmap1_range( PLFLT *min_color, PLFLT *max_color )
 void
 c_plscmap0n( PLINT ncol0 )
 {
-    int ncol, imin, imax;
+    size_t ncol, imin, imax;
 
 // No change
 
@@ -952,7 +951,7 @@ c_plscmap0n( PLINT ncol0 )
     else if ( ncol0 <= 0 )
         ncol = plsc->cmap0.n;
     else
-        ncol = ncol0;
+        ncol = ( size_t )ncol0;
 
     imax = ncol - 1;
 
@@ -1004,33 +1003,33 @@ color_set( PLINT i, U_CHAR r, U_CHAR g, U_CHAR b, PLFLT a, const char *name )
 //! @param imax Index of the last color to set to its default.
 
 void
-plcmap0_def( int imin, int imax )
+plcmap0_def( size_t imin, size_t imax )
 {
-    int          i;
-    unsigned int *r, *g, *b;
-    double       *a;
-    int          number_colors;
+    size_t          i;
+    pluintarray     r, g, b;
+    pldoublearray   a;
+	constructpluintarray( &r, 0 );
+	constructpluintarray( &g, 0 );
+	constructpluintarray( &b, 0 );
+	constructpldoublearray( &a, 0 );
     if ( imin <= imax )
     {
-        cmap0_palette_read( "", &number_colors, &r, &g, &b, &a );
-        for ( i = imin; i <= MIN( ( number_colors - 1 ), imax ); i++ )
-            color_def( i, (U_CHAR) r[i], (U_CHAR) g[i], (U_CHAR) b[i], a[i],
+        cmap0_palette_read( "", &r, &g, &b, &a );
+        for ( i = imin; i <= MIN( ( r.n - 1 ), imax ); i++ )
+            color_def( i, (U_CHAR) r.mem[i], (U_CHAR) g.mem[i], (U_CHAR) b.mem[i], a.mem[i],
                 "colors defined by default cmap0 palette file" );
-        free( r );
-        free( g );
-        free( b );
-        free( a );
-    }
-    else
-    {
-        number_colors = 0;
     }
 
     // Initialize all colours undefined by the default colour palette file
     // to opaque red as a warning.
-    for ( i = MAX( number_colors, imin ); i <= imax; i++ )
+    for ( i = MAX( r.n, imin ); i <= imax; i++ )
         color_def( i, 255, 0, 0, 1.0,
             "opaque red colour to mark not defined by palette file" );
+
+	r.destroy( &r );
+	g.destroy( &g );
+	b.destroy( &b );
+	a.destroy( &a );
 }
 
 //--------------------------------------------------------------------------
@@ -1372,14 +1371,16 @@ read_line( char *buffer, int length, FILE *fp )
 //! @param a alpha value of each color in the palette file.
 
 void
-cmap0_palette_read( const char *filename,
-                    int *number_colors, unsigned int **r, unsigned int **g, unsigned int **b, double **a )
+cmap0_palette_read( const char *filename, pluintarray *r, pluintarray *g,
+                    pluintarray *b, pldoublearray *a )
 {
-    int  i, err = 0;
+    int  i, err = 0, number_colors;
     char color_info[COLLEN];
     char msgbuf[MSGLEN];
     FILE *fp;
     char * save_locale = plsave_set_locale();
+	unsigned int rtemp, gtemp, btemp;
+	double atemp=1.0;
 
     if ( strlen( filename ) == 0 )
     {
@@ -1401,7 +1402,7 @@ cmap0_palette_read( const char *filename,
             err = 1;
         }
     }
-    if ( !err && ( fscanf( fp, "%d\n", number_colors ) != 1 || *number_colors < 1 ) )
+    if ( !err && ( fscanf( fp, "%d\n", &number_colors ) != 1 || number_colors < 1 ) )
     {
         fclose( fp );
         snprintf( msgbuf, MSGLEN, "Unrecognized cmap0 header\n" );
@@ -1411,18 +1412,13 @@ cmap0_palette_read( const char *filename,
 
     if ( !err )
     {
-        // Allocate arrays to hold r, g, b, and a data for calling routine.
-        // The caller must free these after it is finished with them.
-        if ( ( ( *r = (unsigned int *) malloc( (size_t) ( *number_colors ) * sizeof ( unsigned int ) ) ) == NULL ) ||
-             ( ( *g = (unsigned int *) malloc( (size_t) ( *number_colors ) * sizeof ( unsigned int ) ) ) == NULL ) ||
-             ( ( *b = (unsigned int *) malloc( (size_t) ( *number_colors ) * sizeof ( unsigned int ) ) ) == NULL ) ||
-             ( ( *a = (double *) malloc( (size_t) ( *number_colors ) * sizeof ( double ) ) ) == NULL ) )
-        {
-            fclose( fp );
-            plexit( "cmap0_palette_read: insufficient memory" );
-        }
+        // Resize arrays to 0 size in preparation for adding data for calling routine.
+		r->resize( r, 0 );
+		g->resize( g, 0 );
+		b->resize( b, 0 );
+		a->resize( a, 0 );       
 
-        for ( i = 0; i < *number_colors; i++ )
+        for ( i = 0; i < number_colors; i++ )
         {
             if ( read_line( color_info, COLLEN, fp ) == NULL )
             {
@@ -1433,80 +1429,75 @@ cmap0_palette_read( const char *filename,
             // Get the color data
             if ( strlen( color_info ) == 7 )
             {
-                if ( sscanf( color_info, "#%2x%2x%2x",
-                         (unsigned int *) ( *r + i ), (unsigned int *) ( *g + i ),
-                         (unsigned int *) ( *b + i ) ) != 3 )
+                if ( sscanf( color_info, "#%2x%2x%2x", &rtemp, &gtemp, &btemp ) != 3 )
                 {
                     err = 1;
                     break;
                 }
-                *( *a + i ) = 1.0;
             }
             else if ( strlen( color_info ) > 9 )
             {
-                if ( sscanf( color_info, "#%2x%2x%2x %lf",
-                         (unsigned int *) ( *r + i ), (unsigned int *) ( *g + i ),
-                         (unsigned int *) ( *b + i ), (double *) ( *a + i ) ) != 4 )
+                if ( sscanf( color_info, "#%2x%2x%2x %lf", &rtemp, &gtemp, &btemp, &atemp ) != 4 )
                 {
                     err = 1;
                     break;
                 }
                 // fuzzy range check.
-                if ( *( *a + i ) < -FUZZ_EPSILON || *( *a + i ) > ( 1. + FUZZ_EPSILON ) )
+                if ( atemp < -FUZZ_EPSILON || atemp > ( 1. + FUZZ_EPSILON ) )
                 {
                     err = 1;
                     break;
                 }
-                else if ( *( *a + i ) < 0. )
-                {
-                    *( *a + i ) = 0.;
-                }
-                else if ( *( *a + i ) > 1. )
-                {
-                    *( *a + i ) = 1.;
-                }
+				atemp = MIN( MAX( 0., atemp ), 1. );
             }
             else
             {
                 err = 1;
                 break;
             }
+			r->pushback( r, rtemp );
+			g->pushback( g, gtemp );
+			b->pushback( b, btemp );
+			a->pushback( a, atemp );
+
+			if( r->n != g->n || r->n != b->n || r->n != r->allocated || r->n != i+1 ) 
+			{
+				err = 1;
+				break;
+			}
         }
         fclose( fp );
         if ( err )
         {
-            snprintf( msgbuf, MSGLEN, "Unrecognized cmap0 format data line.  Line is %s\n",
+            snprintf( msgbuf, MSGLEN, "Unrecognized cmap0 format data line or insufficient memory.  Line is %s\n",
                 color_info );
             plwarn( msgbuf );
-            free( *r );
-            free( *g );
-            free( *b );
-            free( *a );
+			r->resize( r, 0 );
+			g->resize( g, 0 );
+			b->resize( b, 0 );
+			a->resize( a, 0 );
         }
     }
     // Fall back to opaque red on opaque white as visual warning of any
     // error above.
     if ( err )
     {
-        *number_colors = 16;
-        if ( ( ( *r = (unsigned int *) malloc( (size_t) ( *number_colors ) * sizeof ( int ) ) ) == NULL ) ||
-             ( ( *g = (unsigned int *) malloc( (size_t) ( *number_colors ) * sizeof ( unsigned int ) ) ) == NULL ) ||
-             ( ( *b = (unsigned int *) malloc( (size_t) ( *number_colors ) * sizeof ( unsigned int ) ) ) == NULL ) ||
-             ( ( *a = (double *) malloc( (size_t) ( *number_colors ) * sizeof ( double ) ) ) == NULL ) )
+        number_colors = 16;
+		r->pushback( r, 255 );
+		g->pushback( g, 255 );
+		b->pushback( b, 255 );
+		a->pushback( a, 1. );
+        for ( i = 1; i < number_colors; i++ )
         {
-            plexit( "cmap0_palette_read: insufficient memory" );
+			r->pushback( r, 255 );
+			g->pushback( g, 0 );
+			b->pushback( b, 0 );
+			a->pushback( a, 1. );
         }
-        **r = 255;
-        **g = 255;
-        **b = 255;
-        **a = 1.;
-        for ( i = 1; i < *number_colors; i++ )
-        {
-            *( *r + i ) = 255;
-            *( *g + i ) = 0;
-            *( *b + i ) = 0;
-            *( *a + i ) = 1.0;
-        }
+		if( r->n != g->n || r->n != b->n || r->n != r->allocated || r->n != number_colors )
+		{
+			plexit( "cmap0_pallette_read: Insufficient memory" );
+		}
     }
 
     plrestore_locale( save_locale );
@@ -1523,27 +1514,30 @@ cmap0_palette_read( const char *filename,
 void
 c_plspal0( const char *filename )
 {
-    int          i;
-    unsigned int *r, *g, *b;
-    double       *a;
-    int          number_colors;
-    cmap0_palette_read( filename, &number_colors, &r, &g, &b, &a );
+    size_t          i;
+    pluintarray     r,  g,  b;
+    pldoublearray   a;
+	constructpluintarray( &r, 0 );
+	constructpluintarray( &g, 0 );
+	constructpluintarray( &b, 0 );
+	constructpldoublearray( &a, 0 );
+    cmap0_palette_read( filename, &r, &g, &b, &a );
     // Allocate default number of cmap0 colours if cmap0 allocation not
     // done already.
     plscmap0n( 0 );
     // Allocate sufficient cmap0 colours to contain present data.
-    if ( ( size_t )number_colors > plsc->cmap0.n )
+    if ( ( size_t )r.n > plsc->cmap0.n )
     {
-        plscmap0n( number_colors );
+        plscmap0n( r.n );
     }
-    for ( i = 0; i < number_colors; i++ )
+    for ( i = 0; i < r.n; i++ )
     {
-        c_plscol0a( i, (PLINT) r[i], (PLINT) g[i], (PLINT) b[i], a[i] );
+        c_plscol0a( i, (PLINT) r.mem[i], (PLINT) g.mem[i], (PLINT) b.mem[i], a.mem[i] );
     }
-    free( r );
-    free( g );
-    free( b );
-    free( a );
+    r.destroy ( &r );
+    g.destroy ( &g );
+    b.destroy ( &b );
+    a.destroy ( &a );
 }
 
 //! This code fragment used a lot in plspal1 to deal with

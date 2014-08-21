@@ -50,7 +50,9 @@ typedef struct pl##name##array\
 void constructpl##name##array( pl##name##array *thisone, size_t n );
 
 PLARRAYDECLARE( PLINT, int )
+PLARRAYDECLARE( unsigned int, uint )
 PLARRAYDECLARE( PLFLT, flt )
+PLARRAYDECLARE( double, double )
 PLARRAYDECLARE( char, char )
 PLARRAYDECLARE( unsigned char, uchar )
 PLARRAYDECLARE( PLColor, color )
